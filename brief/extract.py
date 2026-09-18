@@ -49,12 +49,14 @@ def resolve_redirect(url: str, timeout: int) -> str:
     from .util import clean_url
     final = url
     try:
+        from .substack import proxy_url
+        proxies = {"http": proxy_url(), "https": proxy_url()} if proxy_url() else None
         try:
             from curl_cffi import requests as cffi
-            r = cffi.get(url, impersonate="chrome", allow_redirects=True, timeout=timeout)
+            r = cffi.get(url, impersonate="chrome", allow_redirects=True, timeout=timeout, proxies=proxies)
             final, text, ctype, status = r.url, r.text, r.headers.get("content-type", ""), r.status_code
         except ImportError:
-            r = requests.get(url, headers={"User-Agent": UA}, timeout=timeout, allow_redirects=True)
+            r = requests.get(url, headers={"User-Agent": UA}, timeout=timeout, allow_redirects=True, proxies=proxies)
             final, text, ctype, status = r.url, r.text, r.headers.get("content-type", ""), r.status_code
         if final == url and any(h in url for h in TRACKER_HOSTS):
             log.info("redirect not followed for %s (HTTP %s, %s)", url[:70], status, ctype[:30])

@@ -123,15 +123,25 @@ class SubstackError(RuntimeError):
     pass
 
 
+def proxy_url() -> str | None:
+    """Residential proxy for hosts behind Cloudflare (Substack, beehiiv link tracker).
+    SUBSTACK_PROXY = http://user:pass@host:port  (any provider; static residential is ideal)."""
+    return env("SUBSTACK_PROXY") or None
+
+
 class Substack:
     def __init__(self, publication_url: str, sid: str, timeout: int = 30):
         self.pub = publication_url.rstrip("/")
+        proxies = {"http": proxy_url(), "https": proxy_url()} if proxy_url() else None
+        self.proxied = bool(proxies)
         if cffi_requests is not None:
-            self.s = cffi_requests.Session(impersonate="chrome")
+            self.s = cffi_requests.Session(impersonate="chrome", proxies=proxies)
             self.impersonating = True
         else:
             self.s = requests.Session()
             self.s.headers.update({"User-Agent": UA})
+            if proxies:
+                self.s.proxies.update(proxies)
             self.impersonating = False
         self.s.headers.update({"Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9",
                                "Origin": self.pub, "Referer": self.pub + "/publish/home"})
@@ -246,7 +256,13 @@ def check_auth(cfg: Settings) -> int:
         return 1
     pub = cfg.settings["newsletter"]["substack_url"]
     api = Substack(pub, sid)
-    print(f"client: {'curl_cffi (chrome impersonation)' if api.impersonating else 'requests'}")
+    print(f"client: {'curl_cffi (chrome impersonation)' if api.impersonating else 'requests'}, proxy: {'yes' if api.proxied else 'no'}")
+    if api.proxied:
+        try:
+            ip = api.s.get("https://api.ipify.org?format=json", timeout=30).json().get("ip")
+            print(f"egress IP through proxy: {ip}")
+        except Exception as e:  # noqa: BLE001
+            print(f"proxy check failed: {e}")
     for label, url in (("profile (substack.com)", "https://substack.com/api/v1/user/profile/self"),
                        ("profile (publication)", f"{pub}/api/v1/user/profile/self"),
                        ("publication users", f"{pub}/api/v1/publication/users"),

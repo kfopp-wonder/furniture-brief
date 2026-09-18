@@ -49,6 +49,7 @@ jobs:
         if: inputs.task == 'check-substack'
         env:
           SUBSTACK_SID: ${{ secrets.SUBSTACK_SID }}
+          SUBSTACK_PROXY: ${{ secrets.SUBSTACK_PROXY }}
         run: |
           python -m brief.main --check-substack > substack.txt 2>&1 || true
           cat substack.txt

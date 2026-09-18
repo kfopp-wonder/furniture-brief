@@ -77,6 +77,11 @@ def main() -> int:
         return 0
     r.raise_for_status()
     ed = r.json()
+    if ed.get("substack_draft_url") and not args.force:
+        # GitHub already created the draft (via SUBSTACK_PROXY); nothing to do here
+        state[d.isoformat()] = {"url": ed["substack_draft_url"], "generated_at": ed.get("generated_at"), "drafted_at": "github"}
+        STATE_FILE.write_text(json.dumps(state, indent=1))
+        return 0
     if d.isoformat() in state and state[d.isoformat()].get("generated_at") == ed.get("generated_at") and not args.force:
         return 0
 

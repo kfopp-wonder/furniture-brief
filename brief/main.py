@@ -178,13 +178,18 @@ def run(args) -> int:
     # 8b. Substack draft from here only when explicitly enabled (never fatal)
     draft_url = None
     if not args.mock:
-        if env("SUBSTACK_FROM_ACTIONS") == "1":
+        if env("SUBSTACK_FROM_ACTIONS") == "1" or (env("SUBSTACK_PROXY") and env("SUBSTACK_SID")):
             draft_url, warn = substack.publish_draft(cfg, d, content, card_path, card_url)
             if warn:
                 checks.append(warn)
         elif env("SUBSTACK_SID"):
             checks.append("Substack draft is created by your Mac (scripts/substack_local.py) within 15 minutes of it being awake; "
                           "look under Dashboard > Posts > Drafts. Attachments below are the fallback.")
+    if draft_url:
+        ed_path = DOCS / "drafts" / f"{date_str}.json"
+        ed = json.loads(ed_path.read_text(encoding="utf-8"))
+        ed["substack_draft_url"] = draft_url
+        ed_path.write_text(json.dumps(ed, ensure_ascii=False, indent=1), encoding="utf-8")
     run_url = None
     if env("GITHUB_SERVER_URL") and env("GITHUB_REPOSITORY") and env("GITHUB_RUN_ID"):
         run_url = f"{env('GITHUB_SERVER_URL')}/{env('GITHUB_REPOSITORY')}/actions/runs/{env('GITHUB_RUN_ID')}"
