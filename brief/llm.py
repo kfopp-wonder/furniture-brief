@@ -55,7 +55,7 @@ def call_model(cfg: Settings, model: str, system: str, user: str, max_tokens: in
         return mock
     client = _client()
     resp = client.messages.create(
-        model=model, max_tokens=max_tokens, temperature=0.4,
+        model=model, max_tokens=max_tokens,
         system=system,
         messages=[{"role": "user", "content": user}],
     )
