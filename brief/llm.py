@@ -167,7 +167,7 @@ def write_prompt(cfg: Settings, date_str: str, weekday: str, picks: dict, articl
         parts.append("\nBACKUP ARTICLES (use one only to replace an assigned article that is too thin; keep its section):")
         for a in backups:
             parts.append(f'\n--- id: {a["id"]} | source: {a["source"]}\nTITLE: {a["title"]}\nEXCERPT: {a["text"]}')
-    parts.append(f"""
+    parts.append("""
 Return JSON with exactly this shape (article_id values must come from the ids above):
 {{
   "title": "...",

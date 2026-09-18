@@ -14,7 +14,6 @@ import json
 import shutil
 import sys
 from datetime import datetime, timezone
-from pathlib import Path
 
 from . import card as card_mod
 from . import collect, dedupe, extract, llm, market, notify, render

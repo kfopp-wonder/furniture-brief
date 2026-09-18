@@ -1,0 +1,2 @@
+run_at_utc,edition,cost_usd,calls,notes
+2026-09-18T01:08Z,2026-09-17,0.0350,"[{""model"": ""claude-haiku-4-5-20251001"", ""input_tokens"": 1716, ""output_tokens"": 87, ""cost_usd"": 0.0022}, {""model"": ""claude-sonnet-5"", ""input_tokens"": 3805, ""output_tokens"": 2520, ""cost_usd"": 0.0328}]",
