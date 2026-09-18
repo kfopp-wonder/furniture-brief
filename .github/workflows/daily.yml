@@ -51,7 +51,11 @@ jobs:
         run: |
           ARGS=""
           if [ -n "${{ github.event.inputs.date }}" ]; then ARGS="--date ${{ github.event.inputs.date }}"; fi
-          python -m brief.main $ARGS
+          set +e
+          python -m brief.main $ARGS 2>&1 | tee run.log
+          RC=${PIPESTATUS[0]}
+          { echo "# Last run $(date -u +'%Y-%m-%d %H:%M UTC') (exit $RC)"; echo; echo '```'; tail -n 120 run.log; echo '```'; } > state/last_run.md
+          exit $RC
 
       - name: Upload run outputs
         if: always()
@@ -63,6 +67,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Commit state and Pages assets
+        if: always()
         run: |
           git config user.name "furniture-brief-bot"
           git config user.email "actions@users.noreply.github.com"
