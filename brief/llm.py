@@ -169,21 +169,21 @@ def write_prompt(cfg: Settings, date_str: str, weekday: str, picks: dict, articl
             parts.append(f'\n--- id: {a["id"]} | source: {a["source"]}\nTITLE: {a["title"]}\nEXCERPT: {a["text"]}')
     parts.append("""
 Return JSON with exactly this shape (article_id values must come from the ids above):
-{{
+{
   "title": "...",
   "subtitle": "...",
   "greeting": "...",
   "hero": "article_id",
-  "sections": {{
-    "top_stories": [{{"headline": "...", "summary": "...", "article_id": "..."}}],
-    "industry_moves": [{{"headline": "...", "summary": "...", "article_id": "..."}}],
+  "sections": {
+    "top_stories": [{"headline": "...", "summary": "...", "article_id": "..."}],
+    "industry_moves": [{"headline": "...", "summary": "...", "article_id": "..."}],
     "retail_trends": [...],
     "supply_chain": [...],
     "ai_tech": [...]
-  }},
-  "one_thing": {{"headline": "...", "body": "..."}},
+  },
+  "one_thing": {"headline": "...", "body": "..."},
   "closing": "..."
-}}""")
+}""")
     return "\n".join(parts)
 
 

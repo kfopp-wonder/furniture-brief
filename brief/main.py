@@ -74,7 +74,7 @@ def run(args) -> int:
     (out_dir / "candidates.json").write_text(json.dumps(candidates, indent=1, ensure_ascii=False))
 
     # 2. dedupe (Python)
-    history = dedupe.load_history()
+    history = [] if args.mock else dedupe.load_history()   # fixtures ARE a past edition; skip history in mock
     if not args.mock:
         dedupe.refresh_from_substack(cfg, history)
     candidates, dropped = dedupe.filter_candidates(candidates, history, edition=d)
