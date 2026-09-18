@@ -8,7 +8,8 @@ from pathlib import Path
 from .util import Settings, env, log
 
 
-def send_review(cfg: Settings, subject: str, html_body: str, attachments: list[Path]) -> bool:
+def send_review(cfg: Settings, subject: str, html_body: str, attachments: list[Path],
+                inline_png: Path | None = None) -> bool:
     user, pw = env("SMTP_USER"), env("SMTP_PASS")
     mail_from, mail_to = env("MAIL_FROM", user), env("MAIL_TO")
     if not all([user, pw, mail_from, mail_to]):
@@ -21,6 +22,11 @@ def send_review(cfg: Settings, subject: str, html_body: str, attachments: list[P
     msg["To"] = mail_to
     msg.set_content("Your mail client does not render HTML. Open the attached paste.html.")
     msg.add_alternative(html_body, subtype="html")
+    if inline_png and inline_png.exists():
+        # related image for <img src="cid:market_pulse_card">, plus a plain attachment for saving
+        msg.get_payload()[-1].add_related(inline_png.read_bytes(), maintype="image", subtype="png",
+                                          cid="<market_pulse_card>", filename=inline_png.name)
+        attachments = list(attachments) + [inline_png]
     for p in attachments:
         if not p.exists():
             continue

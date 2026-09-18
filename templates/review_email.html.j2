@@ -9,7 +9,7 @@
     <p style="margin:0 0 14px 0; font-size:15px; color:#444;">{{ content.subtitle }}</p>
     <p style="margin:0; font-size:12px; color:#666;">
       Attached: <code>paste.html</code> (select all, copy, paste into the Substack body), <code>title_subtitle.txt</code>, and the Market Pulse card.
-      {% if card_url %}Card URL: <a href="{{ card_url }}">{{ card_url }}</a>{% endif %}
+      {% if card_url %}Card URL (live on GitHub Pages a few minutes after the run): <a href="{{ card_url }}">{{ card_url }}</a>{% endif %}
       {% if run_url %}· <a href="{{ run_url }}">workflow run</a>{% endif %}
     </p>
     {% if notes %}<p style="margin:10px 0 0 0; font-size:12px; color:#666;"><strong>Editor notes applied:</strong> {{ notes }}</p>{% endif %}

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import shutil
 import sys
@@ -122,13 +123,15 @@ def run(args) -> int:
     checks.extend(mkt["flags"])
     (out_dir / "market.json").write_text(json.dumps(mkt, indent=1, default=str))
     card_path = card_mod.render_card(mkt, out_dir / "market_pulse_card.png")
+    # Unique filename per run so reruns of the same date never hit a cached image.
+    card_name = f"{date_str}-{hashlib.sha1(card_path.read_bytes()).hexdigest()[:8]}.png"
     pages = cfg.settings["assets"]["pages_base_url"].rstrip("/")
     card_url = None
     if "REPLACE-ME" in pages:
         checks.append("assets.pages_base_url is not set in config/settings.yaml; the Market Pulse image will not resolve.")
     else:
-        card_url = f"{pages}/pulse/{date_str}.png"
-    shutil.copy(card_path, DOCS / "pulse" / f"{date_str}.png")
+        card_url = f"{pages}/pulse/{card_name}"
+    shutil.copy(card_path, DOCS / "pulse" / card_name)
 
     # 8. render
     newsletter_html = render.render_newsletter(cfg, d, content, card_url)
@@ -144,6 +147,9 @@ def run(args) -> int:
     review_html = render.render_review_email(cfg, d, content, newsletter_html, checks, feed_reports,
                                              usage_d, card_url, run_url, notes)
     (out_dir / "review_email.html").write_text(review_html, encoding="utf-8")
+    # In the emailed copy, show the freshly rendered card inline (cid) instead of the Pages URL,
+    # which only goes live a few minutes after the run and can be cached by mail clients.
+    email_html = review_html.replace(card_url, "cid:market_pulse_card") if card_url else review_html
 
     # 9. state: history + costs
     dedupe.record_edition(d, content, articles)
@@ -165,8 +171,8 @@ def run(args) -> int:
         log.info("email skipped; open %s", out_dir / "review_email.html")
     else:
         subject = f"{cfg.settings['email']['subject_prefix']} · {short_date(d)} · {content['title']}"
-        notify.send_review(cfg, subject, review_html,
-                           [out_dir / "paste.html", out_dir / "title_subtitle.txt", card_path])
+        notify.send_review(cfg, subject, email_html,
+                           [out_dir / "paste.html", out_dir / "title_subtitle.txt"], inline_png=card_path)
     return 0
 
 
