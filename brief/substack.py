@@ -23,6 +23,11 @@ from pathlib import Path
 
 import requests
 
+try:  # curl_cffi presents a real Chrome TLS/HTTP2 fingerprint, which clears Cloudflare's
+    from curl_cffi import requests as cffi_requests  # managed challenge on datacenter IPs
+except ImportError:  # pragma: no cover
+    cffi_requests = None
+
 from .util import Settings, env, log, long_date
 
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
@@ -121,9 +126,15 @@ class SubstackError(RuntimeError):
 class Substack:
     def __init__(self, publication_url: str, sid: str, timeout: int = 30):
         self.pub = publication_url.rstrip("/")
-        self.s = requests.Session()
-        self.s.headers.update({"User-Agent": UA, "Accept": "application/json, text/plain, */*",
-                               "Accept-Language": "en-US,en;q=0.9", "Origin": self.pub, "Referer": self.pub + "/publish/home"})
+        if cffi_requests is not None:
+            self.s = cffi_requests.Session(impersonate="chrome")
+            self.impersonating = True
+        else:
+            self.s = requests.Session()
+            self.s.headers.update({"User-Agent": UA})
+            self.impersonating = False
+        self.s.headers.update({"Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9",
+                               "Origin": self.pub, "Referer": self.pub + "/publish/home"})
         cookies = self._parse_cookie(sid)
         for k, v in cookies.items():
             self.s.cookies.set(k, v, domain=".substack.com")
@@ -221,7 +232,7 @@ def publish_draft(cfg: Settings, d: date, content: dict, card_png: Path, card_ur
         url = f"{pub}/publish/post/{draft_id}"
         log.info("substack draft created: %s", url)
         return url, None
-    except (SubstackError, requests.RequestException) as e:
+    except Exception as e:  # noqa: BLE001  (SubstackError, requests/curl errors)
         log.warning("substack draft failed: %s", e)
         return None, f"Substack draft not created: {e}. Use the paste workflow for this edition."
 
@@ -234,6 +245,7 @@ def check_auth(cfg: Settings) -> int:
         return 1
     pub = cfg.settings["newsletter"]["substack_url"]
     api = Substack(pub, sid)
+    print(f"client: {'curl_cffi (chrome impersonation)' if api.impersonating else 'requests'}")
     for label, url in (("profile (substack.com)", "https://substack.com/api/v1/user/profile/self"),
                        ("profile (publication)", f"{pub}/api/v1/user/profile/self"),
                        ("publication users", f"{pub}/api/v1/publication/users"),
@@ -242,7 +254,7 @@ def check_auth(cfg: Settings) -> int:
             r = api.s.get(url, timeout=30)
             body = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", r.text))[:140]
             print(f"{label:24} HTTP {r.status_code}  server={r.headers.get('server','')!r} cf={r.headers.get('cf-mitigated','')!r}  {body!r}")
-        except requests.RequestException as e:
+        except Exception as e:  # noqa: BLE001
             print(f"{label:24} ERR {e}")
     return 0
 

@@ -228,7 +228,7 @@ def _title_tokens(t: str) -> set[str]:
 def merge_duplicates(items: list[dict]) -> list[dict]:
     """Merge items with the same URL or near-identical titles. Keeps the best-scored,
     prefers non-Google-News, non-paywalled versions; records alternates."""
-    items = sorted(items, key=lambda x: (x["google_news"], x["paywalled"], -x["score"]))
+    items = sorted(items, key=lambda x: (x.get("newsletter", False), x["google_news"], x["paywalled"], -x["score"]))
     out: list[dict] = []
     for it in items:
         dup = None
@@ -244,7 +244,7 @@ def merge_duplicates(items: list[dict]) -> list[dict]:
                     dup = o
                     break
         if dup:
-            dup.setdefault("alternates", []).append({"source": it["source"], "url": it["url"]})
+            dup.setdefault("alternates", []).append({"source": it.get("via") or it["source"], "url": it["url"]})
             dup["score"] = max(dup["score"], it["score"]) + 0.5  # covered by more than one outlet
             dup["is_ai"] = dup["is_ai"] or it["is_ai"]
         else:

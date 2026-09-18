@@ -1,0 +1,48 @@
+# Newsletters read over IMAP from the SMTP_USER Gmail account (or NEWSLETTER_IMAP_USER).
+# Run Actions -> Maintenance -> list-newsletters to get a ranked list of newsletter senders
+# from the last 14 days (written to state/newsletter_senders.md), then add them here.
+#
+# match:    exact addresses or "@domain" suffixes
+# weight:   nudges relevance scoring (1.0 = neutral)
+# ai:       true = every link counts as AI-relevant (routes to AI & Tech Watch)
+# sections: hint for the selector
+
+all_mail: true            # search [Gmail]/All Mail (labels/archived) rather than just INBOX
+max_links_per_email: 12
+
+senders: []
+#  - name: The Rundown AI
+#    match: ["@therundown.ai", "news@daily.therundown.ai"]
+#    weight: 1.0
+#    ai: true
+#    sections: [ai_tech]
+
+# Map link domains to display names for the "Source:" line (otherwise derived from the domain).
+publisher_names:
+  axios.com: Axios
+  reuters.com: Reuters
+  bloomberg.com: Bloomberg
+  wsj.com: The Wall Street Journal
+  nytimes.com: The New York Times
+  ft.com: Financial Times
+  cnbc.com: CNBC
+  techcrunch.com: TechCrunch
+  theverge.com: The Verge
+  wired.com: Wired
+  theinformation.com: The Information
+  businessinsider.com: Business Insider
+  forbes.com: Forbes
+  fortune.com: Fortune
+  retaildive.com: Retail Dive
+  modernretail.co: Modern Retail
+  digiday.com: Digiday
+  pymnts.com: PYMNTS
+  openai.com: OpenAI
+  anthropic.com: Anthropic
+  blog.google: Google
+  mastercard.com: Mastercard
+  visa.com: Visa
+  stripe.com: Stripe
+  shopify.com: Shopify
+  furnituretoday.com: Furniture Today
+  homenewsnow.com: Home News Now

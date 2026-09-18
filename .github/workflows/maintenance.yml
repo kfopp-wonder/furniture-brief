@@ -10,6 +10,7 @@ on:
         options:
           - check-feeds
           - check-substack
+          - list-newsletters
           - backfill-history
           - test-offline
           - mock-run
@@ -55,6 +56,22 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add state/substack_check.md
           git diff --cached --quiet || (git commit -m "substack auth check" && git pull --rebase origin main && git push)
+
+      - name: list-newsletters
+        if: inputs.task == 'list-newsletters'
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          NEWSLETTER_IMAP_USER: ${{ secrets.NEWSLETTER_IMAP_USER }}
+          NEWSLETTER_IMAP_PASS: ${{ secrets.NEWSLETTER_IMAP_PASS }}
+        run: |
+          python -m brief.main --list-newsletters > senders.txt 2>&1 || true
+          cat senders.txt
+          { echo "# Newsletter senders, last 14 days ($(date -u +'%Y-%m-%d'))"; echo; echo 'Senders with a List-Unsubscribe header, most frequent first. Copy the ones you want into config/newsletters.yaml.'; echo; echo '```'; cat senders.txt; echo '```'; } > state/newsletter_senders.md
+          git config user.name "furniture-brief-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/newsletter_senders.md
+          git diff --cached --quiet || (git commit -m "newsletter sender scan" && git pull --rebase origin main && git push)
 
       - name: test-offline
         if: inputs.task == 'test-offline'

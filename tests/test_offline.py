@@ -200,3 +200,32 @@ class TestSubstack(unittest.TestCase):
         self.assertEqual(substack.Substack._parse_cookie("a=1; substack.sid=xyz; b=2")["substack.sid"], "xyz")
         with self.assertRaises(substack.SubstackError):
             substack.Substack._parse_cookie("a=1; b=2")
+
+
+class TestNewsletters(unittest.TestCase):
+    def test_extract_links_keeps_articles_drops_chrome(self):
+        from brief import newsletters
+        html = """
+        <html><body>
+        <a href="https://x.beehiiv.com/p/view-online">View in browser</a>
+        <h2><a href="https://link.mail.beehiiv.com/ss/c/abc123">Mastercard is Giving AI Agents Their Own Credit Cards</a></h2>
+        <p>The network launched Agent Pay, letting shopping agents transact with tokenized credentials. Merchants opt in.</p>
+        <a href="https://example.com/read">Read more</a>
+        <a href="https://twitter.com/therundownai">Follow us</a>
+        <a href="https://cdn.beehiiv.com/img/logo.png"><img src="x"></a>
+        <p><a href="https://openai.com/index/foo">OpenAI ships a retail agent toolkit for merchants</a> and more.</p>
+        <a href="https://x.beehiiv.com/subscribe?ref=1">Subscribe to our newsletter today</a>
+        <a href="https://x.com/unsubscribe">Unsubscribe from these emails</a>
+        </body></html>"""
+        links = newsletters.extract_links(html, 10)
+        titles = [l["title"] for l in links]
+        self.assertEqual(titles, ["Mastercard is Giving AI Agents Their Own Credit Cards",
+                                  "OpenAI ships a retail agent toolkit for merchants"])
+        self.assertIn("Agent Pay", links[0]["excerpt"])
+
+    def test_sender_matching(self):
+        from brief import newsletters
+        s = {"match": ["@therundown.ai", "hello@tldr.tech"]}
+        self.assertTrue(newsletters._match_sender(s, "news@daily.therundown.ai".lower()) or newsletters._match_sender(s, "news@therundown.ai"))
+        self.assertTrue(newsletters._match_sender(s, "hello@tldr.tech"))
+        self.assertFalse(newsletters._match_sender(s, "someone@gmail.com"))

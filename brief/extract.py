@@ -36,6 +36,41 @@ def resolve_google_news(url: str, timeout: int) -> str:
     return url
 
 
+def resolve_redirect(url: str, timeout: int) -> str:
+    """Follow newsletter tracking redirects (beehiiv, mailchimp, substack, etc.) to the article."""
+    try:
+        r = requests.get(url, headers={"User-Agent": UA}, timeout=timeout, allow_redirects=True, stream=True)
+        final = r.url
+        r.close()
+        # some trackers redirect via a meta refresh / JS on a 200 page
+        if final == url and "text/html" in r.headers.get("content-type", ""):
+            rr = requests.get(url, headers={"User-Agent": UA}, timeout=timeout)
+            m = re.search(r'http-equiv="refresh"[^>]*url=([^"\']+)', rr.text, re.I) or re.search(r'window\.location(?:\.href)?\s*=\s*["\']([^"\']+)', rr.text)
+            if m:
+                final = m.group(1)
+        final = re.sub(r"[?&](utm_[a-z]+|ref|mc_cid|mc_eid|_bhlid)=[^&#]*", "", final)
+        return re.sub(r"\?&", "?", final).rstrip("?&")
+    except requests.RequestException:
+        return url
+
+
+def _publisher_name(url: str, fallback: str | None) -> str:
+    try:
+        from .util import load_yaml
+        names = (load_yaml("newsletters.yaml").get("publisher_names") or {})
+    except Exception:  # noqa: BLE001
+        names = {}
+    from urllib.parse import urlparse
+    host = (urlparse(url).hostname or "").lower().removeprefix("www.")
+    for dom, name in names.items():
+        if host == dom or host.endswith("." + dom):
+            return name
+    if host:
+        base = host.split(".")[-2] if host.count(".") >= 1 else host
+        return base.replace("-", " ").title()
+    return fallback or "Web"
+
+
 def _lead_image(html: str) -> str | None:
     for pat in (r'<meta[^>]+property="og:image"[^>]+content="([^"]+)"',
                 r'<meta[^>]+content="([^"]+)"[^>]+property="og:image"',
@@ -56,6 +91,12 @@ def extract_one(article: dict, max_words: int, timeout: int) -> dict:
         if resolved != url:
             article["resolved_url"] = resolved
             url = resolved
+    elif article.get("newsletter"):
+        resolved = resolve_redirect(url, timeout)
+        if resolved != url:
+            article["resolved_url"] = resolved
+            url = resolved
+        article["source"] = _publisher_name(url, article.get("source"))
     cfg = use_config()
     cfg.set("DEFAULT", "DOWNLOAD_TIMEOUT", str(timeout))
     text, image, err = "", None, None

@@ -92,6 +92,8 @@ def select_prompt(cfg: Settings, candidates: list[dict], recent: list[str], note
             flags.append("gnews")
         if c.get("alternates"):
             flags.append(f"+{len(c['alternates'])} outlets")
+        if c.get("via"):
+            flags.append(f"via {c['via']}")
         ex = (c.get("excerpt") or "")[:160]
         lines.append(f'{c["id"]} | {c["source"]} | {c["age_hours"]:.0f}h | {c["title"]} | {ex}'
                      + (f' | [{", ".join(flags)}]' if flags else ""))

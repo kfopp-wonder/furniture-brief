@@ -8,7 +8,7 @@ An agent (Perplexity Computer, or any "go research and write" loop) re-reads eve
 
 | Step | Done by | Tokens |
 |---|---|---|
-| Fetch 10 sources (9 RSS + Furniture Today's post sitemap), filter to last 36h (84h on Mondays) | Python | 0 |
+| Fetch 10 sources (9 RSS + Furniture Today's post sitemap) plus your AI newsletters over IMAP, filter to last 36h (84h on Mondays) | Python | 0 |
 | Score relevance with keywords, merge duplicate stories | Python | 0 |
 | Drop anything already published (your own Substack feed + history) | Python | 0 |
 | **Pick stories for each section** from ~60 one-line candidates | **Haiku 4.5** | ~7k in / ~0.3k out |
@@ -52,6 +52,7 @@ To publish: click **Open draft in Substack** in the email, read it through, and 
 |---|---|
 | Change voice, lengths, headline style | `config/style_guide.md` |
 | Add/remove sources or weight them | `config/feeds.yaml` |
+| Add/remove newsletters read from your inbox | `config/newsletters.yaml` (Actions → Maintenance → `list-newsletters` proposes senders) |
 | Change tickers or market rows | `config/tickers.yaml` |
 | Change section counts or names | `config/settings.yaml` → `sections` |
 | Cheaper writer | `settings.yaml` → `models.writer: claude-haiku-4-5-20251001` |

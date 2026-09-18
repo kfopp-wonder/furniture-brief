@@ -17,8 +17,8 @@ import sys
 from datetime import datetime, timezone
 
 from . import card as card_mod
-from . import collect, dedupe, extract, llm, market, notify, render, substack
-from .util import DOCS, FIXTURES, OUT, STATE, Settings, edition_date, env, log, setup_logging, short_date, window_hours
+from . import collect, dedupe, extract, llm, market, newsletters, notify, render, substack
+from .util import DOCS, FIXTURES, OUT, STATE, Settings, edition_date, env, log, setup_logging, short_date, stable_id, window_hours
 
 
 def parse_args(argv=None):
@@ -30,6 +30,7 @@ def parse_args(argv=None):
     p.add_argument("--no-email", action="store_true", help="build everything but do not send")
     p.add_argument("--check-feeds", action="store_true", help="fetch each feed and report")
     p.add_argument("--check-substack", action="store_true", help="verify SUBSTACK_SID works (no model calls)")
+    p.add_argument("--list-newsletters", action="store_true", help="scan the inbox and rank newsletter senders")
     p.add_argument("--verbose", "-v", action="store_true")
     return p.parse_args(argv)
 
@@ -48,6 +49,13 @@ def run(args) -> int:
 
     if args.check_substack:
         return substack.check_auth(cfg)
+
+    if args.list_newsletters:
+        rows = newsletters.list_senders()
+        print(f"{'emails':>6} {'unsub':>5}  sender")
+        for r in rows:
+            print(f"{r['count']:6} {r['unsub']:5}  {r['address']}  ({r['name']})  e.g. {r['subjects'][0]!r}")
+        return 0
 
     if args.check_feeds:
         rows = collect.check_feeds(cfg)
@@ -76,6 +84,16 @@ def run(args) -> int:
         feed_reports = [{"id": "fixture", "name": "fixture", "fetched": len(candidates), "in_window": len(candidates), "error": None}]
     else:
         candidates, feed_reports = collect.collect(cfg, now, window_hours(cfg, d))
+        nl_items, nl_report = newsletters.collect_newsletters(cfg, now, window_hours(cfg, d))
+        if nl_report.get("error"):
+            feed_reports.append({"id": "newsletters", "name": "Newsletters (IMAP)", "fetched": 0, "in_window": 0, "error": nl_report["error"]})
+        else:
+            feed_reports.append({"id": "newsletters", "name": "Newsletters (IMAP)", "fetched": nl_report["emails"], "in_window": nl_report["links"], "error": None})
+        if nl_items:
+            candidates = collect.merge_duplicates(candidates + nl_items)
+            candidates.sort(key=lambda x: (-x["score"], x["age_hours"]))
+            for it in candidates:
+                it["id"] = stable_id(it["norm_url"] or it["norm_title"])
     (out_dir / "candidates.json").write_text(json.dumps(candidates, indent=1, ensure_ascii=False))
 
     # 2. dedupe (Python)
