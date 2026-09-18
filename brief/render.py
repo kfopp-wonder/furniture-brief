@@ -65,6 +65,10 @@ def validate_and_attach(cfg: Settings, content: dict, articles: dict[str, dict])
                 warnings.append(f'{s["title"]}: "{item["headline"][:50]}" was written from an RSS excerpt only (paywall). Fact-check.')
             if item["google_news"]:
                 warnings.append(f'{s["title"]}: "{item["headline"][:50]}" links through Google News; swap in the publisher URL.')
+            if art.get("unresolved_link"):
+                warnings.append(f'{s["title"]}: "{item["headline"][:50]}" still links through a newsletter tracking URL ({art.get("via", "")}); swap in the publisher URL.')
+            if art.get("is_video"):
+                warnings.append(f'{s["title"]}: "{item["headline"][:50]}" links to a video; the summary was written from the newsletter blurb only.')
             low = (item["summary"] + " " + item["headline"]).lower()
             for b in BANNED:
                 if b in low:

@@ -165,10 +165,6 @@ class TestMarket(unittest.TestCase):
             self.assertGreater(p.stat().st_size, 20_000)
 
 
-if __name__ == "__main__":
-    unittest.main(verbosity=1)
-
-
 class TestSubstack(unittest.TestCase):
     def test_build_doc_structure(self):
         from brief import substack
@@ -229,3 +225,7 @@ class TestNewsletters(unittest.TestCase):
         self.assertTrue(newsletters._match_sender(s, "news@daily.therundown.ai".lower()) or newsletters._match_sender(s, "news@therundown.ai"))
         self.assertTrue(newsletters._match_sender(s, "hello@tldr.tech"))
         self.assertFalse(newsletters._match_sender(s, "someone@gmail.com"))
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=1)

@@ -36,22 +36,41 @@ def resolve_google_news(url: str, timeout: int) -> str:
     return url
 
 
+TRACKER_HOSTS = ("beehiiv.com", "mailchimp", "list-manage.com", "substack.com/redirect", "sendgrid.net", "click.",
+                 "links.", "link.", "email.", "ct.sendgrid", "mailtrack", "hubspotlinks", "convertkit", "kit.com",
+                 "customeriomail", "mailgun", "sparkpostmail", "cmail", "ccsend.com", "rs6.net", "actonsoftware",
+                 "t.co/", "lnkd.in", "bit.ly", "buff.ly")
+
+
 def resolve_redirect(url: str, timeout: int) -> str:
-    """Follow newsletter tracking redirects (beehiiv, mailchimp, substack, etc.) to the article."""
+    """Follow newsletter tracking redirects (beehiiv, mailchimp, substack, etc.) to the article.
+    Uses a Chrome TLS fingerprint when curl_cffi is installed: several link trackers sit
+    behind Cloudflare and refuse plain Python clients from datacenter IPs."""
+    from .util import clean_url
+    if not any(h in url for h in TRACKER_HOSTS):
+        return clean_url(url)
+    final = url
     try:
-        r = requests.get(url, headers={"User-Agent": UA}, timeout=timeout, allow_redirects=True, stream=True)
-        final = r.url
-        r.close()
+        try:
+            from curl_cffi import requests as cffi
+            r = cffi.get(url, impersonate="chrome", allow_redirects=True, timeout=timeout)
+            final, text, ctype = r.url, r.text, r.headers.get("content-type", "")
+        except ImportError:
+            r = requests.get(url, headers={"User-Agent": UA}, timeout=timeout, allow_redirects=True)
+            final, text, ctype = r.url, r.text, r.headers.get("content-type", "")
         # some trackers redirect via a meta refresh / JS on a 200 page
-        if final == url and "text/html" in r.headers.get("content-type", ""):
-            rr = requests.get(url, headers={"User-Agent": UA}, timeout=timeout)
-            m = re.search(r'http-equiv="refresh"[^>]*url=([^"\']+)', rr.text, re.I) or re.search(r'window\.location(?:\.href)?\s*=\s*["\']([^"\']+)', rr.text)
+        if any(h in final for h in TRACKER_HOSTS) and "text/html" in ctype:
+            m = (re.search(r'http-equiv="refresh"[^>]*url=([^"\']+)', text, re.I)
+                 or re.search(r'window\.location(?:\.href)?\s*=\s*["\']([^"\']+)', text)
+                 or re.search(r'<a[^>]+href="(https?://(?!link\.|links\.|click\.)[^"]+)"[^>]*>\s*(?:click here|continue|redirect)', text, re.I))
             if m:
                 final = m.group(1)
-        final = re.sub(r"[?&](utm_[a-z]+|ref|mc_cid|mc_eid|_bhlid)=[^&#]*", "", final)
-        return re.sub(r"\?&", "?", final).rstrip("?&")
-    except requests.RequestException:
-        return url
+    except Exception as e:  # noqa: BLE001
+        log.warning("redirect resolve failed for %s: %s", url[:80], e)
+    return clean_url(final)
+
+
+VIDEO_HOSTS = ("youtube.com", "youtu.be", "vimeo.com", "tiktok.com", "spotify.com", "podcasts.apple.com")
 
 
 def _publisher_name(url: str, fallback: str | None) -> str:
@@ -96,7 +115,19 @@ def extract_one(article: dict, max_words: int, timeout: int) -> dict:
         if resolved != url:
             article["resolved_url"] = resolved
             url = resolved
-        article["source"] = _publisher_name(url, article.get("source"))
+        if any(h in url for h in TRACKER_HOSTS):
+            article["unresolved_link"] = True
+            article["source"] = article.get("via") or article.get("source")
+        else:
+            article["source"] = _publisher_name(url, article.get("source"))
+        if any(h in url for h in VIDEO_HOSTS):
+            article["text"] = article.get("excerpt", "")
+            article["excerpt_only"] = True
+            article["extract_error"] = "video link"
+            article["image"] = None
+            article["full_words"] = 0
+            article["is_video"] = True
+            return article
     cfg = use_config()
     cfg.set("DEFAULT", "DOWNLOAD_TIMEOUT", str(timeout))
     text, image, err = "", None, None

@@ -94,15 +94,33 @@ def stable_id(*parts: str, n: int = 8) -> str:
     return h[:n]
 
 
+TRACKING_PARAM_RE = re.compile(
+    r"^(utm_|cm_|mc_|mkt_|hs|_hs|oly_|vgo_|ck_|bhlid|_bhlid|ncid|ActOn|acton|fbclid|gclid|msclkid|dclid|"
+    r"ref$|source$|email$|e$|subscriber|user_id|uid$|trk|tracking|campaign|s_cid|spMailingID|spUserID|spJobID|spReportId)",
+    re.I,
+)
+
+
+def clean_url(url: str) -> str:
+    """Drop tracking query params and fragments; fix newsletter links like '/path/&cm_mmc=...'."""
+    from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+    url = (url or "").strip()
+    if not url:
+        return url
+    if "?" not in url and "&" in url.split("#")[0]:
+        path, _, rest = url.partition("&")
+        url = path + "?" + rest
+    parts = urlsplit(url)
+    keep = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if not TRACKING_PARAM_RE.search(k)]
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(keep), ""))
+
+
 def normalize_url(url: str) -> str:
     """Strip tracking params and fragments so the same article dedupes."""
-    url = (url or "").strip()
-    url = re.sub(r"#.*$", "", url)
-    url = re.sub(r"[?&](utm_[a-z]+|fbclid|gclid|ref|source|mc_cid|mc_eid)=[^&]*", "", url)
-    url = re.sub(r"\?&", "?", url).rstrip("?&")
+    url = clean_url(url)
     url = re.sub(r"^http://", "https://", url)
     url = re.sub(r"^https://www\.", "https://", url)
-    return url.rstrip("/").lower()
+    return url.rstrip("/?&").lower()
 
 
 def normalize_title(t: str) -> str:

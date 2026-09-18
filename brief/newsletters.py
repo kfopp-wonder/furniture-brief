@@ -30,7 +30,8 @@ SKIP_LINK_RE = re.compile(
     r"unsubscribe|manage.?preferences|update.?profile|view.?in.?browser|view.?online|privacy|terms|"
     r"mailto:|twitter\.com|x\.com/|linkedin\.com|facebook\.com|instagram\.com|youtube\.com/@|threads\.net|"
     r"apple\.com/.*app|play\.google|substack\.com/(app|subscribe|redirect/app)|/subscribe|/signup|/login|"
-    r"forward.?to.?a.?friend|share|refer|sponsor|advertis|\.(png|jpg|jpeg|gif|svg|webp)(\?|$)",
+    r"forward.?to.?a.?friend|share|refer|sponsor|advertis|\.(png|jpg|jpeg|gif|svg|webp)(\?|$)|"
+    r"youtube\.com/(watch|shorts)|youtu\.be/|vimeo\.com|tiktok\.com|open\.spotify|podcasts\.apple",
     re.I,
 )
 SKIP_TEXT_RE = re.compile(
@@ -135,7 +136,6 @@ def collect_newsletters(cfg: Settings, now: datetime, hours: int) -> tuple[list[
         report["error"] = "no senders configured in config/newsletters.yaml"
         return [], report
     max_links = int(ncfg.get("max_links_per_email", 12))
-    names = ncfg.get("publisher_names") or {}
     kw = cfg.feeds.get("keywords", {})
     from .collect import score_item  # local import to avoid a cycle
 
@@ -184,7 +184,7 @@ def collect_newsletters(cfg: Settings, now: datetime, hours: int) -> tuple[list[
                     "title": link["title"], "url": link["url"], "norm_url": normalize_url(link["url"]),
                     "norm_title": normalize_title(link["title"]), "published": dt.isoformat(),
                     "age_hours": round((now - dt).total_seconds() / 3600, 1),
-                    "source": _source_from_url(link["url"], names), "via": sender["name"], "via_subject": subject,
+                    "source": sender["name"], "via": sender["name"], "via_subject": subject,
                     "feed_id": "newsletter:" + sender["name"].lower().replace(" ", "_"),
                     "paywalled": False, "google_news": False, "newsletter": True,
                     "excerpt": link["excerpt"], "score": round(score, 2),
