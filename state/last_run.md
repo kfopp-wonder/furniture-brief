@@ -1,22 +1,42 @@
-# Last run 2026-09-18 03:26 UTC (exit 0)
+# Last run 2026-09-18 09:55 UTC (exit 2)
 
 ```
-03:25:32 INFO    brief: collected 47 items from 10 feeds, 45 after merge
-03:25:32 INFO    brief: dedupe: kept 42, dropped 3
-03:25:35 INFO    httpx2: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-03:25:35 INFO    brief: claude-haiku-4-5-20251001: 4074 in / 259 out (stop=end_turn)
-03:25:37 ERROR   trafilatura.utils: parsed tree length: 0, wrong data type or not valid HTML
-03:25:37 ERROR   trafilatura.core: empty HTML tree: None
-03:25:37 ERROR   trafilatura.utils: parsed tree length: 0, wrong data type or not valid HTML
-03:25:37 ERROR   trafilatura.core: empty HTML tree: None
-03:25:37 INFO    brief: extracted 14/17 full texts
-03:26:25 INFO    httpx2: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-03:26:25 INFO    brief: claude-sonnet-5: 15757 in / 3900 out (stop=end_turn)
-03:26:29 WARNING brief: substack draft failed: profile: Substack rejected the session cookie (403). Refresh SUBSTACK_SID.
-03:26:29 INFO    brief: edition 2026-09-17 built: Furniture Sales Turn Positive as Vendors Stack the Warehouse  (cost $0.076, 4 checks)
-03:26:29 INFO    brief:   check: Industry Moves: "Berlin Gardens Adds Director of Furniture Sales" was written from an RSS excerpt only (paywall). Fact-check.
-03:26:29 INFO    brief:   check: Industry Moves: "Bedding World Lists on Taiwan Exchange" was written from an RSS excerpt only (paywall). Fact-check.
-03:26:29 INFO    brief:   check: AI & Tech Watch: only 2 items (minimum 3).
-03:26:29 INFO    brief:   check: Substack draft not created: profile: Substack rejected the session cookie (403). Refresh SUBSTACK_SID.. Use the paste workflow for this edition.
-03:26:33 INFO    brief: review email sent to kfopp@wondersign.com
+09:54:08 INFO    brief: collected 41 items from 10 feeds, 40 after merge
+09:54:08 INFO    brief: dedupe: kept 22, dropped 18
+09:54:10 INFO    httpx2: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+09:54:10 INFO    brief: claude-haiku-4-5-20251001: 2775 in / 261 out (stop=end_turn)
+09:54:11 ERROR   trafilatura.utils: parsed tree length: 0, wrong data type or not valid HTML
+09:54:11 ERROR   trafilatura.core: empty HTML tree: None
+09:54:11 ERROR   trafilatura.utils: parsed tree length: 0, wrong data type or not valid HTML
+09:54:11 ERROR   trafilatura.core: empty HTML tree: None
+09:54:30 INFO    brief: extracted 14/17 full texts
+09:55:15 INFO    httpx2: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+09:55:15 INFO    brief: claude-sonnet-5: 15201 in / 3705 out (stop=end_turn)
+09:55:15 ERROR   brief: pipeline failed
+Traceback (most recent call last):
+  File "/home/runner/work/furniture-brief/furniture-brief/brief/main.py", line 211, in main
+    return run(args)
+           ^^^^^^^^^
+  File "/home/runner/work/furniture-brief/furniture-brief/brief/main.py", line 134, in run
+    content = llm.write(cfg, date_str, weekday, picks, articles, backups, notes, usage,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/furniture-brief/furniture-brief/brief/llm.py", line 207, in write
+    return call_model(cfg, m["writer"], system,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/furniture-brief/furniture-brief/brief/llm.py", line 74, in call_model
+    return _json_from(text)
+           ^^^^^^^^^^^^^^^^
+  File "/home/runner/work/furniture-brief/furniture-brief/brief/llm.py", line 48, in _json_from
+    return json.loads(text[start:end + 1])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/json/decoder.py", line 338, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/json/decoder.py", line 354, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 86 column 3 (char 10874)
 ```
