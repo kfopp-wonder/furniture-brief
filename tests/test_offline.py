@@ -251,5 +251,21 @@ class TestUnstringify(unittest.TestCase):
         self.assertEqual(out["closing"], "plain text")
 
 
+class TestSelectTolerance(unittest.TestCase):
+    def test_select_accepts_odd_shapes(self):
+        from brief import llm
+        cfg = Settings.load()
+        cands = fx("candidates.json")
+        raw = fx("select_response.json")
+        raw = dict(raw)
+        raw["hero"] = [raw["hero"]]                       # list instead of string
+        raw["industry_moves"] = ", ".join(raw["industry_moves"])   # string instead of list
+        raw["ai_tech"] = [{"id": i} for i in raw["ai_tech"]]       # dicts instead of strings
+        picks = llm.select(cfg, cands, [], "", "2026-09-17", llm.Usage(), mock=raw)
+        self.assertEqual(len(picks["industry_moves"]), 3)
+        self.assertEqual(len(picks["ai_tech"]), 4)
+        self.assertIsInstance(picks["hero"], str)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

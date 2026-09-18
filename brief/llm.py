@@ -195,17 +195,31 @@ def select(cfg: Settings, candidates: list[dict], recent: list[str], notes: str,
                      select_prompt(cfg, candidates, recent, notes, date_str),
                      int(m["selector_max_tokens"]), usage, mock, schema=select_schema(cfg))
     valid = {c["id"] for c in candidates}
+
+    def ids_of(v) -> list[str]:
+        """Tolerate a string, a comma/space separated string, or nested lists/dicts from the model."""
+        if v is None:
+            return []
+        if isinstance(v, str):
+            return [x for x in re.split(r"[,\s]+", v.strip()) if x]
+        if isinstance(v, dict):
+            return ids_of(v.get("id") or v.get("article_id") or list(v.values()))
+        out_ids: list[str] = []
+        for x in v:
+            out_ids.extend(ids_of(x))
+        return out_ids
+
     out: dict = {}
     used: set[str] = set()
     for s in cfg.sections:
         ids = []
-        for i in raw.get(s["key"], []) or []:
+        for i in ids_of(raw.get(s["key"])):
             if i in valid and i not in used:
                 ids.append(i)
                 used.add(i)
         out[s["key"]] = ids[: s["count"]]
-    out["backups"] = [i for i in raw.get("backups", []) or [] if i in valid and i not in used][:cfg.settings["extract"]["backups"]]
-    hero = raw.get("hero")
+    out["backups"] = [i for i in ids_of(raw.get("backups")) if i in valid and i not in used][:cfg.settings["extract"]["backups"]]
+    hero = next(iter(ids_of(raw.get("hero"))), None)
     out["hero"] = hero if hero in valid else (out["top_stories"][0] if out["top_stories"] else None)
     return out
 
