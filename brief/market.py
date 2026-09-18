@@ -243,4 +243,5 @@ def build_market(cfg: Settings, fixture: dict | None = None) -> dict:
     return {"markets": markets, "container": container, "stocks": stocks, "flags": flags,
             "as_of": as_of or date.today().isoformat(),
             "wci_meta": {k: (wci or {}).get(k) for k in ("as_of", "source")},
-            "container_title": ccfg["title"], "container_subtitle": ccfg["subtitle"]}
+            "container_title": ccfg["title"], "container_subtitle": ccfg["subtitle"],
+            "inputs_title": t.get("inputs_title", "Inputs")}

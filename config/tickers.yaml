@@ -1,5 +1,7 @@
 # Market Pulse card contents. Order is render order.
 
+# Section title on the card. Rising inputs show red, falling green (cost view).
+inputs_title: Inputs
 markets:
   - label: Crude Oil
     kind: yfinance

@@ -59,7 +59,9 @@ def _section_header(draw, y: int, title: str, subtitle: str | None = None) -> in
     return y + 24
 
 
-def _row(draw, y: int, row: dict, sub_font, ticker_style: bool = False) -> int:
+def _row(draw, y: int, row: dict, sub_font, ticker_style: bool = False, cost: bool = False) -> int:
+    """cost=True flips the colors: a rising input cost (crude, rates, freight) is red,
+    a falling one is green. Equities keep the conventional green-up / red-down."""
     fb = _font("bold", 30)
     fr = _font("regular", 30)
     fs = _font("regular", 24)
@@ -77,7 +79,10 @@ def _row(draw, y: int, row: dict, sub_font, ticker_style: bool = False) -> int:
     # change, right-aligned
     ch = row["change_text"]
     d = row["direction"]
-    color = GREEN if d == "up" else RED if d == "down" else MUTED
+    if cost:
+        color = RED if d == "up" else GREEN if d == "down" else MUTED
+    else:
+        color = GREEN if d == "up" else RED if d == "down" else MUTED
     arrow = "▲ " if d == "up" else "▼ " if d == "down" else ""
     text = f"{arrow}{ch}"
     cw = _text_w(draw, text, fb)
@@ -95,14 +100,14 @@ def render_card(market: dict, out_path: Path) -> Path:
     draw.rounded_rectangle([(6, 6), (W - 7, height - 7)], radius=18, outline=GOLD, width=3)
 
     y = 40
-    y = _section_header(draw, y, "Markets")
+    y = _section_header(draw, y, market.get("inputs_title", "Inputs"))
     for r in market["markets"]:
-        y = _row(draw, y, r, None)
+        y = _row(draw, y, r, None, cost=True)
     y += 30
     y = _section_header(draw, y, market.get("container_title", "Container Spot Rates"),
                         market.get("container_subtitle"))
     for r in market["container"]:
-        y = _row(draw, y, r, None)
+        y = _row(draw, y, r, None, cost=True)
     y += 30
     y = _section_header(draw, y, "Furniture & Bedding")
     for r in market["stocks"]:
