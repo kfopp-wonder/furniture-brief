@@ -31,7 +31,8 @@ SKIP_LINK_RE = re.compile(
     r"mailto:|twitter\.com|x\.com/|linkedin\.com|facebook\.com|instagram\.com|youtube\.com/@|threads\.net|"
     r"apple\.com/.*app|play\.google|substack\.com/(app|subscribe|redirect/app)|/subscribe|/signup|/login|"
     r"forward.?to.?a.?friend|share|refer|sponsor|advertis|\.(png|jpg|jpeg|gif|svg|webp)(\?|$)|"
-    r"youtube\.com/(watch|shorts)|youtu\.be/|vimeo\.com|tiktok\.com|open\.spotify|podcasts\.apple",
+    r"youtube\.com/(watch|shorts)|youtu\.be/|vimeo\.com|tiktok\.com|open\.spotify|podcasts\.apple|"
+    r"googleusercontent\.com|gstatic\.com|substackcdn\.com|beehiiv\.com/uploads|//(cdn|img|images|static|assets|media)\.",
     re.I,
 )
 SKIP_TEXT_RE = re.compile(

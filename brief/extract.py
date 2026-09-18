@@ -47,17 +47,17 @@ def resolve_redirect(url: str, timeout: int) -> str:
     Uses a Chrome TLS fingerprint when curl_cffi is installed: several link trackers sit
     behind Cloudflare and refuse plain Python clients from datacenter IPs."""
     from .util import clean_url
-    if not any(h in url for h in TRACKER_HOSTS):
-        return clean_url(url)
     final = url
     try:
         try:
             from curl_cffi import requests as cffi
             r = cffi.get(url, impersonate="chrome", allow_redirects=True, timeout=timeout)
-            final, text, ctype = r.url, r.text, r.headers.get("content-type", "")
+            final, text, ctype, status = r.url, r.text, r.headers.get("content-type", ""), r.status_code
         except ImportError:
             r = requests.get(url, headers={"User-Agent": UA}, timeout=timeout, allow_redirects=True)
-            final, text, ctype = r.url, r.text, r.headers.get("content-type", "")
+            final, text, ctype, status = r.url, r.text, r.headers.get("content-type", ""), r.status_code
+        if final == url and any(h in url for h in TRACKER_HOSTS):
+            log.info("redirect not followed for %s (HTTP %s, %s)", url[:70], status, ctype[:30])
         # some trackers redirect via a meta refresh / JS on a 200 page
         if any(h in final for h in TRACKER_HOSTS) and "text/html" in ctype:
             m = (re.search(r'http-equiv="refresh"[^>]*url=([^"\']+)', text, re.I)
@@ -133,6 +133,15 @@ def extract_one(article: dict, max_words: int, timeout: int) -> dict:
     text, image, err = "", None, None
     try:
         r = requests.get(url, headers={"User-Agent": UA}, timeout=timeout)
+        if r.url and r.url != url:
+            from .util import clean_url
+            landed = clean_url(r.url)
+            if not any(h in landed for h in TRACKER_HOSTS):
+                article["resolved_url"] = landed
+                url = landed
+                article.pop("unresolved_link", None)
+                if article.get("newsletter"):
+                    article["source"] = _publisher_name(url, article.get("source"))
         if r.status_code < 400 and r.text:
             html = r.text
             image = _lead_image(html)
