@@ -48,6 +48,7 @@ jobs:
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
           SUBSTACK_SID: ${{ secrets.SUBSTACK_SID }}
+          SUBSTACK_FROM_ACTIONS: ${{ vars.SUBSTACK_FROM_ACTIONS }}
           NEWSLETTER_IMAP_USER: ${{ secrets.NEWSLETTER_IMAP_USER }}
           NEWSLETTER_IMAP_PASS: ${{ secrets.NEWSLETTER_IMAP_PASS }}
           BRIEF_NOTES: ${{ github.event.inputs.notes }}

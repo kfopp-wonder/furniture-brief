@@ -207,16 +207,17 @@ class Substack:
         return self._check(r, "create draft")
 
 
-def publish_draft(cfg: Settings, d: date, content: dict, card_png: Path, card_url: str | None) -> tuple[str | None, str | None]:
+def publish_draft(cfg: Settings, d: date, content: dict, card_png: Path | None, card_url: str | None,
+                  sid: str | None = None) -> tuple[str | None, str | None]:
     """Create the Substack draft. Returns (editor_url, warning). Never raises."""
-    sid = env("SUBSTACK_SID")
+    sid = sid or env("SUBSTACK_SID")
     if not sid:
         return None, "SUBSTACK_SID not set; draft not created in Substack (paste workflow only)."
     pub = cfg.settings["newsletter"]["substack_url"]
     try:
         api = Substack(pub, sid)
         uid = api.user_id()
-        hosted_card = api.upload_image(card_png) if card_png.exists() else card_url
+        hosted_card = api.upload_image(card_png) if (card_png and card_png.exists()) else (api.upload_image(card_url) if card_url else None)
         hero = content.get("hero_image")
         if hero and hero.get("url"):
             try:

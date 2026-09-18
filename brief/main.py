@@ -162,12 +162,23 @@ def run(args) -> int:
     (DOCS / "drafts" / f"{date_str}.html").write_text(
         f"<!DOCTYPE html><html><head><meta charset='utf-8'><title>{content['title']}</title></head><body>{newsletter_html}</body></html>",
         encoding="utf-8")
-    # 8b. Substack draft (skipped in mock mode; never fatal)
+    # 8a. edition JSON for scripts/substack_local.py (runs on your Mac, where Substack's
+    #     Cloudflare rules accept the session cookie; GitHub's IP range gets challenged)
+    (DOCS / "drafts" / f"{date_str}.json").write_text(json.dumps({
+        "date": date_str, "title": content["title"], "subtitle": content["subtitle"],
+        "content": content, "card_url": card_url, "generated_at": now.isoformat(),
+    }, ensure_ascii=False, indent=1), encoding="utf-8")
+
+    # 8b. Substack draft from here only when explicitly enabled (never fatal)
     draft_url = None
     if not args.mock:
-        draft_url, warn = substack.publish_draft(cfg, d, content, card_path, card_url)
-        if warn:
-            checks.append(warn)
+        if env("SUBSTACK_FROM_ACTIONS") == "1":
+            draft_url, warn = substack.publish_draft(cfg, d, content, card_path, card_url)
+            if warn:
+                checks.append(warn)
+        elif env("SUBSTACK_SID"):
+            checks.append("Substack draft is created by your Mac (scripts/substack_local.py) within 15 minutes of it being awake; "
+                          "look under Dashboard > Posts > Drafts. Attachments below are the fallback.")
     run_url = None
     if env("GITHUB_SERVER_URL") and env("GITHUB_REPOSITORY") and env("GITHUB_RUN_ID"):
         run_url = f"{env('GITHUB_SERVER_URL')}/{env('GITHUB_REPOSITORY')}/actions/runs/{env('GITHUB_RUN_ID')}"

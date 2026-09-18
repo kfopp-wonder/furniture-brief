@@ -32,7 +32,10 @@ It is also more reliable than the current card: every quote is checked (a price 
    - `FRED_API_KEY`: free at fred.stlouisfed.org (10-yr, gas, diesel, 30-yr mortgage).
    - `SMTP_USER`, `SMTP_PASS`: a Gmail address and a Gmail [app password](https://myaccount.google.com/apppasswords).
    - `MAIL_FROM`, `MAIL_TO`: sender and your inbox.
-   - `SUBSTACK_SID` (optional, recommended): your Substack session cookie, so each run creates the edition as a **draft in Substack** with title, subtitle, body, images and card already in place. In Chrome, logged in to Substack: View → Developer → Developer Tools → Application → Cookies → `https://substack.com` → copy the **Value** of `substack.sid`. Sessions last months; when it expires the review email says so and falls back to the paste workflow.
+   - `SUBSTACK_SID` (optional): only needed if you set `SUBSTACK_FROM_ACTIONS=1` to try creating the draft from GitHub. Substack's Cloudflare rules challenge GitHub's IP range, so by default the draft is created **from your Mac** instead (next section).
+8. **Substack drafts from your Mac** (optional, recommended). Run once in Terminal:
+   `curl -fsSL https://raw.githubusercontent.com/kfopp-wonder/furniture-brief/main/scripts/install_mac.sh | bash`
+   It clones the repo to `~/furniture-brief`, asks for your `substack.sid` cookie (Chrome: View → Developer → Developer Tools → Application → Cookies → `https://substack.com` → Value of `substack.sid`), stores it in `~/.furniture-brief/`, and installs a launchd job that checks every 15 minutes for a new edition and creates it as a **draft in Substack** with title, subtitle, body, images and the card in place. Sessions last months; when the cookie expires the log and a macOS notification tell you.
 4. **Seed the dedupe history** from all past editions (zero tokens): Actions → Maintenance → Run workflow → `backfill-history`. It reads the public Substack archive and commits `state/history.jsonl`. (Locally: `python scripts/backfill_history.py`.) The repo ships pre-seeded with the Sept 11–17 editions.
 5. **Verify feeds**: Actions → Maintenance → `check-feeds` prints how many items each feed returned. Fix or remove any that show errors in `config/feeds.yaml`. (Locally: `python -m brief.main --check-feeds`.)
 6. **Dry run**: Actions → Daily Brief → Run workflow. You'll get the review email in about 2 minutes.
@@ -42,7 +45,7 @@ It is also more reliable than the current card: every quote is checked (a price 
 
 At ~5:45am ET (09:45 UTC; GitHub's scheduler can lag 5–15 minutes) the workflow runs and emails **"Review: The Furniture Brief · Thu Sep 17 · {title}"** containing the title and subtitle, a yellow **Check before publishing** box (feed errors, paywalled stories written from excerpts, odd quotes, Google News links to replace), the run cost, the full rendered edition, and attachments: `paste.html`, `title_subtitle.txt`, and the card PNG.
 
-To publish: click **Open draft in Substack** in the email, read it through, and hit Publish. (Without `SUBSTACK_SID`: open Substack → New post → paste title and subtitle → copy the edition from the email or `paste.html` → paste into the body → publish.)
+To publish: open Substack → Dashboard → Posts → Drafts, open today's edition (created by your Mac within 15 minutes of it being awake), read it through, and hit Publish. Without the Mac step: New post → paste title and subtitle → copy the edition from the email or `paste.html` → paste into the body → publish.
 
 **Regenerate with direction:** Actions → Daily Brief → Run workflow, enter notes such as *"Lead with the Fed hike. Drop the Lowe's item."* Both model calls receive the notes. Cost per rerun: the same ~$0.10.
 
@@ -60,7 +63,7 @@ To publish: click **Open draft in Substack** in the email, read it through, and 
 
 ## Known limits
 
-- **Substack has no official publishing API.** Drafts are created through the same internal endpoints the Substack editor uses (`/api/v1/drafts`, `/api/v1/image`), authenticated with your session cookie. The pipeline never publishes; you still press the button. If Substack changes those endpoints, the run keeps working and the email falls back to the paste workflow.
+- **Substack has no official publishing API.** Drafts are created through the same internal endpoints the Substack editor uses (`/api/v1/drafts`, `/api/v1/image`), authenticated with your session cookie, from your Mac because Substack's Cloudflare rules challenge GitHub's runners. The pipeline never publishes; you still press the button. If Substack changes those endpoints, the morning email still arrives and the paste workflow still works.
 - **Drewry WCI** has no API; the scraper is best-effort. If it breaks, the email says so; copy `state/wci_manual.example.yaml` to `state/wci_manual.yaml` and update the three numbers on Thursdays.
 - **Paywalled sources** (some Furniture Today pieces) fall back to the RSS excerpt and are flagged for fact-checking.
 - **Google News items** link through news.google.com; they are flagged so you can swap in the publisher URL.
@@ -88,7 +91,7 @@ Every run writes `out/{date}/`: `candidates.json` (what was collected), `picks.j
 brief/        collect · dedupe · extract · llm (the 2 calls) · market · card · render · substack · notify · main
 config/       settings, feeds, tickers, style_guide.md
 templates/    newsletter.html.j2 (your current Substack markup), review_email.html.j2
-scripts/      backfill_history.py
+scripts/      backfill_history.py · substack_local.py + install_mac.sh (Mac-side Substack draft)
 tests/        test_offline.py + fixtures/ (a real edition, used by --mock)
 state/        history.jsonl (dedupe corpus), costs.csv (per-run spend), wci.json
 docs/         GitHub Pages: pulse/{date}.png, drafts/{date}.html
