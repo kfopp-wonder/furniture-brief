@@ -194,6 +194,7 @@ Guidance:
 - Supply Chain & Trade: only genuinely about tariffs, freight, sourcing, logistics. Return [] if nothing fits.
 - AI & Tech Watch: AI tools, agentic commerce, retail tech, AI shopping studies. Skip AI stories with no plausible retail angle (model research, chip news, politics).
 - Skip anything that duplicates a recently covered headline unless it has clearly new facts.
+- One item per news event across the whole edition: if several candidates cover the same announcement (for example the same product launch reported by a newsletter, a blog and TechCrunch), pick the single best-sourced one (publisher or primary source over newsletter) and leave the rest out.
 - Two recurring themes of this newsletter deserve a slight edge when candidates are otherwise equal: (a) who carries inventory risk (vendor quick-ship and in-stock programs, drop-ship, direct-to-consumer delivery, warehouses, freight, endless aisle, DTC brands opening showrooms); (b) online share of furniture sales (e-commerce results and penetration, marketplaces, agentic commerce, AI shopping tools, visualizers, retail media, checkout and financing).
 - Also choose "backups": 4 spare article ids, best first, in case a pick cannot be extracted.
 - Choose "hero": the article id whose lead image should top the edition (a Top Story with a likely photo).

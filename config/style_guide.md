@@ -56,6 +56,7 @@ The Brief has two recurring arguments. Bring them in when a story genuinely touc
 
 ## Sourcing rules
 
+- One item per news event: never write two items about the same announcement, even from different sources.
 - Every item uses exactly one `article_id` from the candidates you were given. Never cite anything else, never combine two articles into one item, never reference a source that was not provided.
 - Do not repeat a story already covered in a previous edition (a list of recent headlines is provided). A follow-up with new facts is fine if the summary leads with what is new.
 - If an article's text is marked as an excerpt only (paywalled), write only what the excerpt supports and keep the item shorter.
