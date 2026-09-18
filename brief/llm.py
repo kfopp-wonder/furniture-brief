@@ -54,14 +54,23 @@ def call_model(cfg: Settings, model: str, system: str, user: str, max_tokens: in
         usage.add(model, len(system + user) // 4, len(json.dumps(mock)) // 4, cfg.settings["models"]["prices_per_mtok"])
         return mock
     client = _client()
-    resp = client.messages.create(
-        model=model, max_tokens=max_tokens,
-        system=system,
-        messages=[{"role": "user", "content": user}],
-    )
+    kwargs: dict = {"model": model, "max_tokens": max_tokens, "system": system,
+                    "messages": [{"role": "user", "content": user}]}
+    # Thinking is on by default for Sonnet 5 / Opus 5 and its tokens count against
+    # max_tokens. Off by default here: the prompt already contains the full material.
+    # settings.yaml models.thinking: disabled | low | medium | high
+    mode = str(cfg.settings["models"].get("thinking", "disabled")).lower()
+    if mode == "disabled":
+        kwargs["thinking"] = {"type": "disabled"}
+    else:
+        kwargs["thinking"] = {"type": "adaptive"}
+        kwargs["output_config"] = {"effort": mode}
+    resp = client.messages.create(**kwargs)
     text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
     usage.add(model, resp.usage.input_tokens, resp.usage.output_tokens, cfg.settings["models"]["prices_per_mtok"])
-    log.info("%s: %d in / %d out", model, resp.usage.input_tokens, resp.usage.output_tokens)
+    log.info("%s: %d in / %d out (stop=%s)", model, resp.usage.input_tokens, resp.usage.output_tokens, resp.stop_reason)
+    if resp.stop_reason == "max_tokens":
+        raise RuntimeError(f"{model} hit max_tokens={max_tokens} before finishing; raise models.*_max_tokens in settings.yaml")
     return _json_from(text)
 
 

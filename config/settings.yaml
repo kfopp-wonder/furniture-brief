@@ -64,8 +64,11 @@ models:
     claude-haiku-4-5-20251001: {input: 1.00, output: 5.00}
     claude-sonnet-5: {input: 2.00, output: 10.00}
     claude-opus-5: {input: 5.00, output: 25.00}
-  selector_max_tokens: 1200
-  writer_max_tokens: 6000
+  # disabled = fastest/cheapest (default). low/medium/high turns on adaptive thinking;
+  # thinking tokens count against the max_tokens below, so raise them if you enable it.
+  thinking: disabled
+  selector_max_tokens: 1500
+  writer_max_tokens: 8000
 
 # Full-text extraction limits (words) — keeps the writer prompt ~15k tokens
 extract:
