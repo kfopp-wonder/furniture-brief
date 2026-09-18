@@ -8,7 +8,7 @@ An agent (Perplexity Computer, or any "go research and write" loop) re-reads eve
 
 | Step | Done by | Tokens |
 |---|---|---|
-| Fetch ~11 RSS feeds, filter to last 36h (84h on Mondays) | Python | 0 |
+| Fetch 10 sources (9 RSS + Furniture Today's post sitemap), filter to last 36h (84h on Mondays) | Python | 0 |
 | Score relevance with keywords, merge duplicate stories | Python | 0 |
 | Drop anything already published (your own Substack feed + history) | Python | 0 |
 | **Pick stories for each section** from ~60 one-line candidates | **Haiku 4.5** | ~7k in / ~0.3k out |
