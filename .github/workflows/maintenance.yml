@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - check-feeds
+          - check-substack
           - backfill-history
           - test-offline
           - mock-run
@@ -41,6 +42,19 @@ jobs:
           git add state/feed_check.md
           git diff --cached --quiet || (git commit -m "feed check $(date -u +%Y-%m-%d)" && git pull --rebase origin main && git push)
           if [ $RC -ne 0 ]; then echo "::warning::one or more feeds returned an error (see state/feed_check.md)"; fi
+
+      - name: check-substack
+        if: inputs.task == 'check-substack'
+        env:
+          SUBSTACK_SID: ${{ secrets.SUBSTACK_SID }}
+        run: |
+          python -m brief.main --check-substack > substack.txt 2>&1 || true
+          cat substack.txt
+          { echo "# Substack auth check $(date -u +'%Y-%m-%d %H:%M UTC')"; echo; echo '```'; cat substack.txt; echo '```'; } > state/substack_check.md
+          git config user.name "furniture-brief-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/substack_check.md
+          git diff --cached --quiet || (git commit -m "substack auth check" && git pull --rebase origin main && git push)
 
       - name: test-offline
         if: inputs.task == 'test-offline'

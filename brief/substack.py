@@ -122,7 +122,8 @@ class Substack:
     def __init__(self, publication_url: str, sid: str, timeout: int = 30):
         self.pub = publication_url.rstrip("/")
         self.s = requests.Session()
-        self.s.headers.update({"User-Agent": UA, "Accept": "application/json"})
+        self.s.headers.update({"User-Agent": UA, "Accept": "application/json, text/plain, */*",
+                               "Accept-Language": "en-US,en;q=0.9", "Origin": self.pub, "Referer": self.pub + "/publish/home"})
         cookies = self._parse_cookie(sid)
         for k, v in cookies.items():
             self.s.cookies.set(k, v, domain=".substack.com")
@@ -144,7 +145,10 @@ class Substack:
 
     def _check(self, r: requests.Response, what: str) -> dict:
         if r.status_code in (401, 403):
-            raise SubstackError(f"{what}: Substack rejected the session cookie ({r.status_code}). Refresh SUBSTACK_SID.")
+            body = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", r.text))[:160]
+            cf = r.headers.get("cf-mitigated") or r.headers.get("server", "")
+            hint = "Cloudflare bot challenge (not the cookie)" if ("cf-mitigated" in r.headers or "Just a moment" in r.text or "challenge" in r.text.lower()) else "session cookie rejected; refresh SUBSTACK_SID"
+            raise SubstackError(f"{what}: HTTP {r.status_code}, {hint}. server={cf!r} body={body!r}")
         if r.status_code >= 400:
             raise SubstackError(f"{what}: HTTP {r.status_code} {r.text[:200]}")
         try:
@@ -220,6 +224,27 @@ def publish_draft(cfg: Settings, d: date, content: dict, card_png: Path, card_ur
     except (SubstackError, requests.RequestException) as e:
         log.warning("substack draft failed: %s", e)
         return None, f"Substack draft not created: {e}. Use the paste workflow for this edition."
+
+
+def check_auth(cfg: Settings) -> int:
+    """--check-substack: verify the cookie works from this machine. Zero model tokens."""
+    sid = env("SUBSTACK_SID")
+    if not sid:
+        print("SUBSTACK_SID not set")
+        return 1
+    pub = cfg.settings["newsletter"]["substack_url"]
+    api = Substack(pub, sid)
+    for label, url in (("profile (substack.com)", "https://substack.com/api/v1/user/profile/self"),
+                       ("profile (publication)", f"{pub}/api/v1/user/profile/self"),
+                       ("publication users", f"{pub}/api/v1/publication/users"),
+                       ("drafts list", f"{pub}/api/v1/drafts?limit=1")):
+        try:
+            r = api.s.get(url, timeout=30)
+            body = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", r.text))[:140]
+            print(f"{label:24} HTTP {r.status_code}  server={r.headers.get('server','')!r} cf={r.headers.get('cf-mitigated','')!r}  {body!r}")
+        except requests.RequestException as e:
+            print(f"{label:24} ERR {e}")
+    return 0
 
 
 def slugify(title: str) -> str:

@@ -29,6 +29,7 @@ def parse_args(argv=None):
     p.add_argument("--force", action="store_true", help="run on weekends/skip dates; implies --no-email")
     p.add_argument("--no-email", action="store_true", help="build everything but do not send")
     p.add_argument("--check-feeds", action="store_true", help="fetch each feed and report")
+    p.add_argument("--check-substack", action="store_true", help="verify SUBSTACK_SID works (no model calls)")
     p.add_argument("--verbose", "-v", action="store_true")
     return p.parse_args(argv)
 
@@ -44,6 +45,9 @@ def run(args) -> int:
     date_str = d.isoformat()
     weekday = d.strftime("%A")
     notes = (args.notes or env("BRIEF_NOTES") or "").strip()
+
+    if args.check_substack:
+        return substack.check_auth(cfg)
 
     if args.check_feeds:
         rows = collect.check_feeds(cfg)
