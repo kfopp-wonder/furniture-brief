@@ -10,12 +10,95 @@
 all_mail: true            # search [Gmail]/All Mail (labels/archived) rather than just INBOX
 max_links_per_email: 12
 
-senders: []
-#  - name: The Rundown AI
-#    match: ["@therundown.ai", "news@daily.therundown.ai"]
-#    weight: 1.0
-#    ai: true
-#    sections: [ai_tech]
+senders:
+  # ---- AI newsletters (links count as AI-relevant; selector still needs a retail angle)
+  - name: The AI Report
+    match: ["theaireport@mail.beehiiv.com"]
+    weight: 1.0
+    ai: true
+    sections: [ai_tech]
+  - name: Superhuman
+    match: ["superhuman@mail.joinsuperhuman.ai", "@mail.joinsuperhuman.ai"]
+    weight: 1.0
+    ai: true
+    sections: [ai_tech]
+  - name: The Deep View
+    match: ["newsletter@thedeepview.co", "@thedeepview.co"]
+    weight: 1.0
+    ai: true
+    sections: [ai_tech]
+  - name: Techzip
+    match: ["techzip@mail.beehiiv.com"]
+    weight: 0.8
+    ai: true
+    sections: [ai_tech]
+  - name: Founders Daily Brief
+    match: ["founders-daily-brief@mail.beehiiv.com"]
+    weight: 0.8
+    ai: true
+    sections: [ai_tech]
+  - name: Daily Tech Insider
+    match: ["newsletters@nl.technologyadvice.com"]
+    weight: 0.7
+    ai: true
+    sections: [ai_tech]
+  - name: The CEO Report
+    match: ["ceo@marketingmax.io"]
+    weight: 0.7
+    ai: true
+    sections: [ai_tech, retail_trends]
+  - name: Business Analytics Review
+    match: ["businessanalytics@substack.com"]
+    weight: 0.6
+    ai: true
+    sections: [ai_tech]
+  - name: a16z
+    match: ["a16z@substack.com"]
+    weight: 0.6
+    ai: true
+    sections: [ai_tech]
+
+  # ---- Trade and retail newsletters (scored by keywords like RSS items)
+  - name: Furniture Today newsletter
+    match: ["furnituretoday@email.furnituretoday.com", "@email.furnituretoday.com"]
+    weight: 1.2
+    ai: false
+    sections: [top_stories, industry_moves]
+  - name: Home News Now newsletters
+    match: ["@homenewsnow.com"]          # Home, Casual, Design and Lighting News Now
+    weight: 1.1
+    ai: false
+    sections: [top_stories, industry_moves]
+  - name: Inside Retail US
+    match: ["newsbrief@insideretail.us"]
+    weight: 0.9
+    ai: false
+    sections: [retail_trends, industry_moves]
+  - name: Furniture World
+    match: ["russell@furnitureworldmagazine.ccsend.com", "@furnitureworldmagazine.ccsend.com"]
+    weight: 0.9
+    ai: false
+    sections: [industry_moves, top_stories]
+  - name: Big Furniture Group
+    match: ["info@bigfurnituregroup.com"]
+    weight: 0.6
+    ai: false
+    sections: [industry_moves]
+  - name: Watson Weekly
+    match: ["rick@watsonweekly.com"]
+    weight: 0.8
+    ai: false
+    sections: [retail_trends]
+  - name: IHFRA
+    match: ["ihfra@ihfra.org"]
+    weight: 0.5
+    ai: false
+    sections: [industry_moves]
+  - name: APRO (rent-to-own)
+    match: ["info@rtohq.org"]
+    weight: 0.5
+    ai: false
+    sections: [retail_trends]
 
 # Map link domains to display names for the "Source:" line (otherwise derived from the domain).
 publisher_names:
