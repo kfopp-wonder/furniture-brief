@@ -10,6 +10,7 @@ on:
         options:
           - check-feeds
           - check-substack
+          - check-substack-browser
           - list-newsletters
           - backfill-history
           - test-offline
@@ -56,6 +57,20 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add state/substack_check.md
           git diff --cached --quiet || (git commit -m "substack auth check" && git pull --rebase origin main && git push)
+
+      - name: check-substack-browser
+        if: inputs.task == 'check-substack-browser'
+        env:
+          SUBSTACK_SID: ${{ secrets.SUBSTACK_SID }}
+        run: |
+          pip install -q playwright && python -m playwright install --with-deps chromium >/dev/null 2>&1
+          python scripts/substack_browser_check.py > browser.txt 2>&1 || true
+          cat browser.txt
+          { echo "# Substack headless-browser check $(date -u +'%Y-%m-%d %H:%M UTC')"; echo; echo '```'; cat browser.txt; echo '```'; } > state/substack_browser_check.md
+          git config user.name "furniture-brief-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/substack_browser_check.md
+          git diff --cached --quiet || (git commit -m "substack browser check" && git pull --rebase origin main && git push)
 
       - name: list-newsletters
         if: inputs.task == 'list-newsletters'
