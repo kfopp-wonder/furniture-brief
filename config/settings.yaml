@@ -12,7 +12,7 @@ newsletter:
 # Where the Market Pulse PNG will be hosted (GitHub Pages, /docs folder).
 # Set this after enabling Pages: https://<user>.github.io/<repo>
 assets:
-  pages_base_url: "https://REPLACE-ME.github.io/furniture-brief"
+  pages_base_url: "https://kfopp-wonder.github.io/furniture-brief"
 
 # Collection window
 window:
