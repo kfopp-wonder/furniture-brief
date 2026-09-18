@@ -35,7 +35,12 @@ jobs:
           python -m brief.main --check-feeds > feeds.txt 2>&1; RC=$?
           { echo '### Feed check'; echo '```'; cat feeds.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           cat feeds.txt
-          if [ $RC -ne 0 ]; then echo "::warning::one or more feeds returned an error (see summary)"; fi
+          { echo "# Feed check $(date -u +'%Y-%m-%d %H:%M UTC')"; echo; echo '```'; cat feeds.txt; echo '```'; } > state/feed_check.md
+          git config user.name "furniture-brief-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/feed_check.md
+          git diff --cached --quiet || (git commit -m "feed check $(date -u +%Y-%m-%d)" && git pull --rebase origin main && git push)
+          if [ $RC -ne 0 ]; then echo "::warning::one or more feeds returned an error (see state/feed_check.md)"; fi
 
       - name: test-offline
         if: inputs.task == 'test-offline'
