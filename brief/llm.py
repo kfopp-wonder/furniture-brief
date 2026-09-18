@@ -48,14 +48,26 @@ def _json_from(text: str) -> dict:
     return json.loads(text[start:end + 1])
 
 
+def _repair_json(text: str) -> str:
+    """Fix the usual model slips: trailing commas, smart quotes around keys, stray fences."""
+    text = re.sub(r",\s*([}\]])", r"\1", text)
+    text = text.replace("\u201c", '"').replace("\u201d", '"')
+    return text
+
+
 def call_model(cfg: Settings, model: str, system: str, user: str, max_tokens: int, usage: Usage,
-               mock: dict | None = None) -> dict:
+               mock: dict | None = None, schema: dict | None = None) -> dict:
+    """One model call returning a dict. With `schema`, the answer is forced through a tool
+    call so the API guarantees well-formed JSON; otherwise free text is parsed (with repair)."""
     if mock is not None:
         usage.add(model, len(system + user) // 4, len(json.dumps(mock)) // 4, cfg.settings["models"]["prices_per_mtok"])
         return mock
     client = _client()
     kwargs: dict = {"model": model, "max_tokens": max_tokens, "system": system,
                     "messages": [{"role": "user", "content": user}]}
+    if schema is not None:
+        kwargs["tools"] = [{"name": "emit", "description": "Return the finished result.", "input_schema": schema}]
+        kwargs["tool_choice"] = {"type": "tool", "name": "emit"}
     # Thinking is on by default for Sonnet 5 / Opus 5 and its tokens count against
     # max_tokens. Off by default here: the prompt already contains the full material.
     # settings.yaml models.thinking: disabled | low | medium | high
@@ -66,12 +78,44 @@ def call_model(cfg: Settings, model: str, system: str, user: str, max_tokens: in
         kwargs["thinking"] = {"type": "adaptive"}
         kwargs["output_config"] = {"effort": mode}
     resp = client.messages.create(**kwargs)
-    text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
     usage.add(model, resp.usage.input_tokens, resp.usage.output_tokens, cfg.settings["models"]["prices_per_mtok"])
     log.info("%s: %d in / %d out (stop=%s)", model, resp.usage.input_tokens, resp.usage.output_tokens, resp.stop_reason)
     if resp.stop_reason == "max_tokens":
         raise RuntimeError(f"{model} hit max_tokens={max_tokens} before finishing; raise models.*_max_tokens in settings.yaml")
-    return _json_from(text)
+    for b in resp.content:
+        if getattr(b, "type", "") == "tool_use" and isinstance(b.input, dict):
+            return b.input
+    text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+    try:
+        return _json_from(text)
+    except json.JSONDecodeError as e:
+        log.warning("model JSON needed repair: %s", e)
+        return _json_from(_repair_json(text))
+
+
+# ---------------------------------------------------------------- schemas
+
+def select_schema(cfg: Settings) -> dict:
+    props = {s["key"]: {"type": "array", "items": {"type": "string"}} for s in cfg.sections}
+    props["backups"] = {"type": "array", "items": {"type": "string"}}
+    props["hero"] = {"type": "string"}
+    return {"type": "object", "properties": props, "required": list(props)}
+
+
+def write_schema(cfg: Settings) -> dict:
+    item = {"type": "object",
+            "properties": {"headline": {"type": "string"}, "summary": {"type": "string"}, "article_id": {"type": "string"}},
+            "required": ["headline", "summary", "article_id"]}
+    sections = {s["key"]: {"type": "array", "items": item} for s in cfg.sections}
+    return {"type": "object",
+            "properties": {
+                "title": {"type": "string"}, "subtitle": {"type": "string"}, "greeting": {"type": "string"},
+                "hero": {"type": "string"},
+                "sections": {"type": "object", "properties": sections, "required": list(sections)},
+                "one_thing": {"type": "object", "properties": {"headline": {"type": "string"}, "body": {"type": "string"}},
+                              "required": ["headline", "body"]},
+                "closing": {"type": "string"}},
+            "required": ["title", "subtitle", "greeting", "hero", "sections", "one_thing", "closing"]}
 
 
 # ---------------------------------------------------------------- call 1: select
@@ -121,7 +165,7 @@ RECENTLY COVERED HEADLINES (avoid repeats):
 CANDIDATES (id | source | age | title | excerpt | flags):
 {chr(10).join(lines)}
 
-Return JSON exactly like:
+Return your selection by calling the emit tool with:
 {{"top_stories": ["id", ...], "industry_moves": [...], "retail_trends": [...], "supply_chain": [...], "ai_tech": [...], "backups": [...], "hero": "id"}}"""
 
 
@@ -130,7 +174,7 @@ def select(cfg: Settings, candidates: list[dict], recent: list[str], notes: str,
     m = cfg.settings["models"]
     raw = call_model(cfg, m["selector"], SELECT_SYSTEM,
                      select_prompt(cfg, candidates, recent, notes, date_str),
-                     int(m["selector_max_tokens"]), usage, mock)
+                     int(m["selector_max_tokens"]), usage, mock, schema=select_schema(cfg))
     valid = {c["id"] for c in candidates}
     out: dict = {}
     used: set[str] = set()
@@ -181,7 +225,7 @@ def write_prompt(cfg: Settings, date_str: str, weekday: str, picks: dict, articl
         for a in backups:
             parts.append(f'\n--- id: {a["id"]} | source: {a["source"]}\nTITLE: {a["title"]}\nEXCERPT: {a["text"]}')
     parts.append("""
-Return JSON with exactly this shape (article_id values must come from the ids above):
+Return the edition by calling the emit tool with exactly this shape (article_id values must come from the ids above):
 {
   "title": "...",
   "subtitle": "...",
@@ -206,4 +250,4 @@ def write(cfg: Settings, date_str: str, weekday: str, picks: dict, articles: dic
     system = WRITE_SYSTEM_TEMPLATE.format(style_guide=cfg.style_guide)
     return call_model(cfg, m["writer"], system,
                       write_prompt(cfg, date_str, weekday, picks, articles, backups, notes),
-                      int(m["writer_max_tokens"]), usage, mock)
+                      int(m["writer_max_tokens"]), usage, mock, schema=write_schema(cfg))

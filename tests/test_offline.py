@@ -227,5 +227,18 @@ class TestNewsletters(unittest.TestCase):
         self.assertFalse(newsletters._match_sender(s, "someone@gmail.com"))
 
 
+class TestJsonRepair(unittest.TestCase):
+    def test_trailing_commas_and_smart_quotes(self):
+        from brief import llm
+        bad = '{"a": [1, 2,], "b": {"c": "x",},}'
+        self.assertEqual(llm._json_from(llm._repair_json(bad)), {"a": [1, 2], "b": {"c": "x"}})
+
+    def test_schemas_cover_sections(self):
+        from brief import llm
+        cfg = Settings.load()
+        self.assertIn("ai_tech", llm.select_schema(cfg)["properties"])
+        self.assertIn("supply_chain", llm.write_schema(cfg)["properties"]["sections"]["properties"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
