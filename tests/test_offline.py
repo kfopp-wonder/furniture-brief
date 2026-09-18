@@ -240,5 +240,16 @@ class TestJsonRepair(unittest.TestCase):
         self.assertIn("supply_chain", llm.write_schema(cfg)["properties"]["sections"]["properties"])
 
 
+class TestUnstringify(unittest.TestCase):
+    def test_nested_json_strings_are_decoded(self):
+        from brief import llm
+        raw = {"title": "x", "sections": '{"top_stories": [{"headline": "h", "summary": "s", "article_id": "a",}]}',
+               "one_thing": '{"headline": "a", "body": "b"}', "closing": "plain text"}
+        out = llm._unstringify(raw)
+        self.assertEqual(out["sections"]["top_stories"][0]["article_id"], "a")
+        self.assertEqual(out["one_thing"]["body"], "b")
+        self.assertEqual(out["closing"], "plain text")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

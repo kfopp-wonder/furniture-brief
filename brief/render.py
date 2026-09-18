@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import html
+import json
 import re
 from datetime import date
 
@@ -34,6 +35,13 @@ def validate_and_attach(cfg: Settings, content: dict, articles: dict[str, dict])
     content["one_thing"] = {"headline": _clean(ot.get("headline", "")), "body": _clean(ot.get("body", ""))}
 
     sections = content.get("sections") or {}
+    if isinstance(sections, str):
+        try:
+            sections = json.loads(sections)
+        except json.JSONDecodeError:
+            sections = {}
+    if not isinstance(sections, dict):
+        sections = {}
     out_sections: dict[str, list[dict]] = {}
     used: set[str] = set()
     for s in cfg.sections:

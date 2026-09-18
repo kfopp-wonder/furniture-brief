@@ -48,6 +48,25 @@ def _json_from(text: str) -> dict:
     return json.loads(text[start:end + 1])
 
 
+def _unstringify(obj):
+    """Tool inputs sometimes arrive with a nested object encoded as a JSON string. Decode those."""
+    if isinstance(obj, dict):
+        return {k: _unstringify(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_unstringify(v) for v in obj]
+    if isinstance(obj, str):
+        t = obj.strip()
+        if (t.startswith("{") and t.endswith("}")) or (t.startswith("[") and t.endswith("]")):
+            try:
+                return _unstringify(json.loads(t))
+            except json.JSONDecodeError:
+                try:
+                    return _unstringify(json.loads(_repair_json(t)))
+                except json.JSONDecodeError:
+                    return obj
+    return obj
+
+
 def _repair_json(text: str) -> str:
     """Fix the usual model slips: trailing commas, smart quotes around keys, stray fences."""
     text = re.sub(r",\s*([}\]])", r"\1", text)
@@ -84,13 +103,13 @@ def call_model(cfg: Settings, model: str, system: str, user: str, max_tokens: in
         raise RuntimeError(f"{model} hit max_tokens={max_tokens} before finishing; raise models.*_max_tokens in settings.yaml")
     for b in resp.content:
         if getattr(b, "type", "") == "tool_use" and isinstance(b.input, dict):
-            return b.input
+            return _unstringify(b.input)
     text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
     try:
-        return _json_from(text)
+        return _unstringify(_json_from(text))
     except json.JSONDecodeError as e:
         log.warning("model JSON needed repair: %s", e)
-        return _json_from(_repair_json(text))
+        return _unstringify(_json_from(_repair_json(text)))
 
 
 # ---------------------------------------------------------------- schemas
