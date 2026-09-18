@@ -161,7 +161,7 @@ def write_prompt(cfg: Settings, date_str: str, weekday: str, picks: dict, articl
     parts.append("\nSECTION TARGETS:")
     for s in cfg.sections:
         lo, hi = s["words"]
-        parts.append(f'- {s["key"]} ({s["title"]}): {len(picks.get(s["key"], []))} items assigned, {lo}-{hi} words each')
+        parts.append(f'- {s["key"]} ({s["title"]}): {len(picks.get(s["key"], []))} items assigned, {lo}-{hi} words each (HARD CAP {hi}; count before you finish)')
     parts.append("\nASSIGNED ARTICLES:")
     for s in cfg.sections:
         for i in picks.get(s["key"], []):
@@ -170,7 +170,8 @@ def write_prompt(cfg: Settings, date_str: str, weekday: str, picks: dict, articl
                 continue
             tag = " [EXCERPT ONLY - paywalled; write only what this supports]" if a.get("excerpt_only") else ""
             img = " [has lead image]" if a.get("image") else ""
-            parts.append(f'\n--- id: {i} | section: {s["key"]} | source: {a["source"]} | published: {a["published"][:16]}{tag}{img}\n'
+            lo, hi = s["words"]
+            parts.append(f'\n--- id: {i} | section: {s["key"]} | summary length: {lo}-{hi} words | source: {a["source"]} | published: {a["published"][:16]}{tag}{img}\n'
                          f'TITLE: {a["title"]}\nTEXT:\n{a["text"]}')
     if backups:
         parts.append("\nBACKUP ARTICLES (use one only to replace an assigned article that is too thin; keep its section):")

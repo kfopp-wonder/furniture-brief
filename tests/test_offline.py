@@ -148,7 +148,7 @@ class TestMarket(unittest.TestCase):
     def test_build_market_flags_bad_quotes(self):
         cfg = Settings.load()
         m = market.build_market(cfg, fixture=fx("market.json"))
-        self.assertTrue(any("SNBR" in f for f in m["flags"]))
+        self.assertTrue(any("PRPL" in f for f in m["flags"]))   # fixture price below $0.50
         self.assertEqual(m["stocks"][0]["label"], "HD")           # sorted by price desc
         tsy = next(r for r in m["markets"] if r["label"].startswith("10-Yr"))
         self.assertEqual(tsy["change_text"], "+7 bp")

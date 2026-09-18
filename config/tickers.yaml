@@ -40,6 +40,7 @@ container_rates:
       key: composite
 
 # Furniture & bedding equities — sorted by price, descending, on the card.
+# Removed 2026-09: LEG (merged into SGI, Aug 27), SNBR (Chapter 11, delisted June), TBHC (acquired by BBBY, April).
 stocks:
   - {symbol: HD,   name: Home Depot}
   - {symbol: WSM,  name: Williams-Sonoma}
@@ -47,7 +48,7 @@ stocks:
   - {symbol: RH,   name: RH (Restoration Hardware)}
   - {symbol: W,    name: Wayfair}
   - {symbol: FLXS, name: Flexsteel Industries}
-  - {symbol: SGI,  name: Somnigroup (Tempur-Sealy)}
+  - {symbol: SGI,  name: Somnigroup (Tempur-Sealy, Leggett)}
   - {symbol: GCT,  name: GigaCloud Technology}
   - {symbol: FND,  name: "Floor & Decor"}
   - {symbol: LZB,  name: La-Z-Boy}
@@ -57,8 +58,6 @@ stocks:
   - {symbol: BSET, name: Bassett Furniture}
   - {symbol: LOVE, name: Lovesac}
   - {symbol: HOFT, name: Hooker Furnishings}
-  - {symbol: LEG,  name: "Leggett & Platt"}
   - {symbol: ARHS, name: Arhaus}
   - {symbol: PRPL, name: Purple Innovation}
-  - {symbol: SNBR, name: Sleep Number}
-  - {symbol: TBHC, name: The Brand House Collective}   # formerly Kirkland's (KIRK)
+  - {symbol: BBBY, name: Bed Bath & Beyond}   # owns Kirkland's / Brand House Collective since Apr 2026

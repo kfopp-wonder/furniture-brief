@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from datetime import date, timedelta
 
 import requests
@@ -93,33 +94,60 @@ def fred_series(series_id: str, api_key: str | None, days: int = 30) -> list[tup
 # ---------------------------------------------------------------- Drewry WCI
 
 def scrape_wci(url: str, timeout: int = 20) -> dict | None:
-    """Best-effort: find Shanghai-LA, Shanghai-NY and composite $/FEU figures on Drewry's page."""
-    try:
-        r = requests.get(url, timeout=timeout, headers={"User-Agent": "Mozilla/5.0"})
-        r.raise_for_status()
-        text = re.sub(r"<[^>]+>", " ", r.text)
-        text = re.sub(r"\s+", " ", text)
-    except Exception as e:  # noqa: BLE001
-        log.warning("WCI scrape failed: %s", e)
+    """Best-effort: parse Drewry's weekly WCI paragraph, e.g.
+    'The Drewry World Container Index (WCI) ... increased 1% to $4,500 per 40ft container'
+    'rates from Shanghai to Los Angeles increased 5% to $7,712 per 40ft container'."""
+    ua = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
+          "Chrome/124.0 Safari/537.36")
+    text = None
+    for attempt in range(3):
+        try:
+            r = requests.get(url, timeout=timeout, headers={"User-Agent": ua, "Accept-Language": "en-US,en;q=0.9"})
+            if r.status_code == 429:
+                time.sleep(8 * (attempt + 1))
+                continue
+            r.raise_for_status()
+            text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", r.text))
+            break
+        except Exception as e:  # noqa: BLE001
+            log.warning("WCI scrape attempt %d failed: %s", attempt + 1, e)
+            time.sleep(5)
+    if not text:
         return None
 
+    verbs = r"(increased|decreased|rose|fell|dropped|grew|soared|slid|climbed|declined|jumped|plunged|gained|lost|remained|stayed|was|were|unchanged|stable|flat)"
+
     def find(label_re: str) -> tuple[float | None, float | None]:
-        m = re.search(label_re + r".{0,160}?\$\s?([\d,]{4,6})(?:\s*per\s*40ft|/FEU| per FEU)?", text, re.I)
+        m = re.search(label_re + r"[^$]{0,200}?" + verbs + r"(?:\s+(?:by\s+)?(\d{1,2}(?:\.\d+)?)\s?%)?[^$]{0,40}?\$\s?([\d,]{4,6})", text, re.I)
         if not m:
             return None, None
-        val = float(m.group(1).replace(",", ""))
-        tail = text[m.end(): m.end() + 160]
-        pm = re.search(r"([+-]?\d{1,2}(?:\.\d+)?)\s?%", tail)
-        pct = float(pm.group(1)) if pm else None
-        return val, pct
+        verb, pct, val = m.group(1).lower(), m.group(2), float(m.group(3).replace(",", ""))
+        if pct is None or verb in ("remained", "stayed", "unchanged", "stable", "flat", "was", "were"):
+            change = 0.0
+        else:
+            change = float(pct)
+            if verb in ("decreased", "fell", "dropped", "slid", "declined", "plunged", "lost"):
+                change = -change
+        return val, change
 
-    comp, comp_pct = find(r"(?:composite index|World Container Index)[^$]{0,120}?(?:decreased|increased|rose|fell|dropped|up|down|remained)")
-    la, la_pct = find(r"Shanghai\s*(?:to|-|–)\s*Los Angeles")
-    ny, ny_pct = find(r"Shanghai\s*(?:to|-|–)\s*New York")
+    m_date = re.search(r"assessment for \w+,?\s*(\d{1,2} \w+ 20\d\d)", text)
+    as_of = date.today().isoformat()
+    if m_date:
+        try:
+            from datetime import datetime as _dt
+            as_of = _dt.strptime(m_date.group(1), "%d %b %Y").date().isoformat()
+        except ValueError:
+            try:
+                as_of = _dt.strptime(m_date.group(1), "%d %B %Y").date().isoformat()
+            except ValueError:
+                pass
+    comp, comp_pct = find(r"World Container Index \(WCI\)")
+    la, la_pct = find(r"Shanghai to Los Angeles")
+    ny, ny_pct = find(r"Shanghai to New York")
     if not any([comp, la, ny]):
         return None
     return {"composite": comp, "composite_pct": comp_pct, "shanghai_la": la, "shanghai_la_pct": la_pct,
-            "shanghai_ny": ny, "shanghai_ny_pct": ny_pct, "as_of": date.today().isoformat(), "source": "scrape"}
+            "shanghai_ny": ny, "shanghai_ny_pct": ny_pct, "as_of": as_of, "source": "scrape"}
 
 
 def load_wci(cfg: Settings) -> tuple[dict | None, str | None]:
@@ -138,7 +166,9 @@ def load_wci(cfg: Settings) -> tuple[dict | None, str | None]:
     if WCI_FILE.exists():
         cached = json.loads(WCI_FILE.read_text())
         age = (date.today() - date.fromisoformat(cached.get("as_of", "2000-01-01"))).days
-        flag = f"Drewry WCI scrape failed; showing cached figures from {cached.get('as_of')} ({age} days old)."
+        flag = None
+        if age > 9:
+            flag = f"Drewry WCI scrape failed; showing cached figures from {cached.get('as_of')} ({age} days old). Update state/wci_manual.yaml."
         return cached, flag
     return None, "Drewry WCI unavailable (scrape failed, no cache). Copy state/wci_manual.example.yaml to state/wci_manual.yaml."
 
