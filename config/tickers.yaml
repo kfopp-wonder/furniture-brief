@@ -48,7 +48,7 @@ stocks:
   - {symbol: RH,   name: RH (Restoration Hardware)}
   - {symbol: W,    name: Wayfair}
   - {symbol: FLXS, name: Flexsteel Industries}
-  - {symbol: SGI,  name: Somnigroup (Tempur-Sealy, Leggett)}
+  - {symbol: SGI,  name: Somnigroup (Tempur-Sealy)}
   - {symbol: GCT,  name: GigaCloud Technology}
   - {symbol: FND,  name: "Floor & Decor"}
   - {symbol: LZB,  name: La-Z-Boy}
