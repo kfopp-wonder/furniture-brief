@@ -1,0 +1,10 @@
+# Copy to state/wci_manual.yaml when the Drewry scrape breaks. Update on Thursdays
+# from https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry
+# Values are $/FEU; *_pct is the week-over-week change in percent.
+composite: 4476
+composite_pct: 0.0
+shanghai_la: 7352
+shanghai_la_pct: 2.0
+shanghai_ny: 9726
+shanghai_ny_pct: 1.0
+as_of: 2026-09-10

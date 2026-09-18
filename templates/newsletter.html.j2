@@ -1,0 +1,95 @@
+<div style="max-width: 600px; margin: 0 auto; font-family: Georgia, 'Times New Roman', serif; color: #1a1a1a;">
+
+    <!-- Header -->
+    <div style="text-align: center; padding: 10px 0 20px 0; border-bottom: 2px solid #8B7355;">
+        <p style="margin: 0; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 2px;">
+            {{ date_long }}
+        </p>
+    </div>
+
+    <!-- Greeting -->
+    <div style="padding: 20px 0;">
+        <p style="font-size: 15px; color: #333; line-height: 1.7; margin: 0;">
+            {{ content.greeting }}
+        </p>
+    </div>
+
+{% if content.hero_image %}
+    <div style="margin: 10px 0 20px 0; text-align: center;">
+            <img src="{{ content.hero_image.url }}" alt="{{ content.hero_image.alt }}" style="max-width: 100%; width: 100%; max-width: 600px; height: auto; border-radius: 8px; border: 1px solid #ddd;" />
+    </div>
+{% endif %}
+
+{% for sec in sections %}
+{% if sec.key == "retail_trends" %}
+    <!-- Market Pulse -->
+    <div style="margin: 0 0 30px 0;">
+        <h2 style="font-size: 20px; color: #8B7355; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 16px; font-weight: 600;">
+            Market Pulse
+        </h2>
+{% if card_url %}
+        <div style="border:2px solid #C6A76A; border-radius:6px; padding:16px; margin:0 0 8px 0; text-align:center;"><a href="{{ card_url }}" target="_blank"><img src="{{ card_url }}" alt="Market Pulse" style="max-width: 100%; height: auto; border-radius: 4px;"></a></div>
+{% else %}
+        <p style="font-size: 13px; color: #888; margin: 0;">[Market Pulse card not available for this edition]</p>
+{% endif %}
+    </div>
+
+{% endif %}
+{% if sec.entries %}
+    <!-- {{ sec.title }} -->
+    <div style="margin: 0 0 30px 0;">
+        <h2 style="font-size: 20px; color: #8B7355; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 16px; font-weight: 600;">
+            {{ sec.title }}
+        </h2>
+{% if sec.kind == "story" %}
+{% for it in sec.entries %}
+        <div style="margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #e8e8e8;">
+            <h3 style="margin: 0 0 6px 0; font-size: 17px; color: #1a1a1a; font-weight: 600;">
+                {{ loop.index }}. {{ it.headline }}
+            </h3>
+            <p style="margin: 0 0 6px 0; font-size: 14px; color: #444; line-height: 1.6;">
+                {{ it.summary }}
+            </p>
+            <p style="margin: 0; font-size: 12px; color: #888;">
+                <em>Source: <a href="{{ it.source_url }}" style="color: #666; text-decoration: underline;">{{ it.source_name }}</a></em>
+            </p>
+        </div>
+{% endfor %}
+{% else %}
+        <ul style="padding-left: 20px; margin: 0;">
+{% for it in sec.entries %}
+        <li style="margin-bottom: 10px; font-size: 14px; color: #444; line-height: 1.5;">
+            <strong>{{ it.headline }}</strong> - {{ it.summary }}
+            <br><em style="font-size: 12px; color: #888;">Source: <a href="{{ it.source_url }}" style="color: #666;">{{ it.source_name }}</a></em>
+        </li>
+{% endfor %}
+        </ul>
+{% endif %}
+    </div>
+
+{% endif %}
+{% endfor %}
+    <!-- The One Thing -->
+    <div style="background: #f8f5f0; border-left: 4px solid #8B7355; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+        <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #4a3728;">The One Thing</h3>
+        <p style="margin: 0 0 8px 0; font-size: 15px; color: #1a1a1a; font-weight: 600; line-height: 1.4;">{{ content.one_thing.headline }}</p>
+        <p style="margin: 0; font-size: 15px; color: #333; line-height: 1.6; font-style: italic;">
+            {{ content.one_thing.body }}
+        </p>
+    </div>
+
+    <!-- Closing -->
+    <div style="padding: 20px 0; margin-top: 10px; border-top: 1px solid #ddd;">
+        <p style="font-size: 14px; color: #555; line-height: 1.6; margin: 0;">
+            {{ content.closing }}
+        </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; padding: 15px 0; border-top: 2px solid #8B7355; margin-top: 10px;">
+        <p style="margin: 0; font-size: 11px; color: #aaa;">
+            {{ footer }}
+        </p>
+    </div>
+
+</div>

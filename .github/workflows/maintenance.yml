@@ -1,0 +1,60 @@
+name: Maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "What to run"
+        required: true
+        type: choice
+        options:
+          - check-feeds
+          - backfill-history
+          - test-offline
+          - mock-run
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -q -r requirements.txt
+
+      - name: check-feeds
+        if: inputs.task == 'check-feeds'
+        run: python -m brief.main --check-feeds
+
+      - name: test-offline
+        if: inputs.task == 'test-offline'
+        run: python tests/test_offline.py
+
+      - name: mock-run
+        if: inputs.task == 'mock-run'
+        run: |
+          python -m brief.main --mock --date 2026-09-17
+          git checkout -- state/ docs/ 2>/dev/null || true
+
+      - name: backfill-history
+        if: inputs.task == 'backfill-history'
+        run: |
+          python scripts/backfill_history.py
+          git config user.name "furniture-brief-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/history.jsonl
+          git diff --cached --quiet || (git commit -m "backfill dedupe history from Substack archive" && git push)
+
+      - name: Upload outputs
+        if: always() && inputs.task == 'mock-run'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mock-run
+          path: out/
+          if-no-files-found: ignore

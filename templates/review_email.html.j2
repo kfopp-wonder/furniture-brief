@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Review: The Furniture Brief · {{ date_long }}</title></head>
+<body style="margin:0; padding:20px; background:#f4f4f4; font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif; color:#1a1a1a;">
+<div style="max-width: 680px; margin: 0 auto;">
+
+  <div style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px; margin-bottom:16px;">
+    <p style="margin:0 0 4px 0; font-size:12px; color:#888; text-transform:uppercase; letter-spacing:1px;">Review draft · {{ date_long }}</p>
+    <h1 style="margin:0 0 6px 0; font-size:22px;">{{ content.title }}</h1>
+    <p style="margin:0 0 14px 0; font-size:15px; color:#444;">{{ content.subtitle }}</p>
+    <p style="margin:0; font-size:12px; color:#666;">
+      Attached: <code>paste.html</code> (select all, copy, paste into the Substack body), <code>title_subtitle.txt</code>, and the Market Pulse card.
+      {% if card_url %}Card URL: <a href="{{ card_url }}">{{ card_url }}</a>{% endif %}
+      {% if run_url %}· <a href="{{ run_url }}">workflow run</a>{% endif %}
+    </p>
+    {% if notes %}<p style="margin:10px 0 0 0; font-size:12px; color:#666;"><strong>Editor notes applied:</strong> {{ notes }}</p>{% endif %}
+  </div>
+
+{% if checks or feed_errors %}
+  <div style="background:#fff8e1; border:1px solid #f1d27a; border-left:5px solid #e0b122; border-radius:8px; padding:16px 20px; margin-bottom:16px;">
+    <h2 style="margin:0 0 8px 0; font-size:15px; color:#7a5a00;">Check before publishing</h2>
+    <ul style="margin:0; padding-left:18px; font-size:13px; line-height:1.5; color:#5a4400;">
+{% for c in checks %}
+      <li>{{ c }}</li>
+{% endfor %}
+{% for f in feed_errors %}
+      <li>Feed error: {{ f }}</li>
+{% endfor %}
+    </ul>
+  </div>
+{% else %}
+  <div style="background:#eef8ee; border:1px solid #bfe3bf; border-left:5px solid #3c9a3c; border-radius:8px; padding:12px 20px; margin-bottom:16px; font-size:13px; color:#215521;">
+    No warnings. All quotes passed sanity checks, all feeds responded, all items were written from full text.
+  </div>
+{% endif %}
+
+  <div style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:12px 20px; margin-bottom:16px; font-size:12px; color:#666;">
+    Run cost: <strong>${{ "%.3f"|format(usage.total) }}</strong>
+    ({% for c in usage.calls %}{{ c.model }} {{ c.input_tokens }} in / {{ c.output_tokens }} out{% if not loop.last %}; {% endif %}{% endfor %})
+  </div>
+
+  <div style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:24px;">
+    {{ newsletter_html | safe }}
+  </div>
+
+</div>
+</body></html>

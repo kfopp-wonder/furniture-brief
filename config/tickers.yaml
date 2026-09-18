@@ -1,0 +1,64 @@
+# Market Pulse card contents. Order is render order.
+
+markets:
+  - label: Crude Oil
+    kind: yfinance
+    symbol: "CL=F"
+    format: "${:,.2f}"
+  - label: 10-Yr Treasury
+    kind: fred
+    series: DGS10
+    format: "{:.2f}%"
+    change: bp          # show change in basis points instead of %
+  - label: Gas (nat'l avg)
+    kind: fred
+    series: GASREGW     # weekly, Monday
+    format: "${:.2f}/gal"
+    weekly: true
+  - label: Diesel (nat'l avg)
+    kind: fred
+    series: GASDESW     # weekly, Monday
+    format: "${:.2f}/gal"
+    weekly: true
+  - label: 30-Yr Mortgage
+    kind: fred
+    series: MORTGAGE30US   # weekly, Thursday
+    format: "{:.2f}%"
+    weekly: true
+    change: bp
+
+container_rates:
+  title: "Container Spot Rates"
+  subtitle: "Weekly (Drewry WCI), WoW change shown"
+  source_url: https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry
+  rows:
+    - label: US West Coast
+      key: shanghai_la
+    - label: US East Coast
+      key: shanghai_ny
+    - label: WCI Composite (Global)
+      key: composite
+
+# Furniture & bedding equities — sorted by price, descending, on the card.
+stocks:
+  - {symbol: HD,   name: Home Depot}
+  - {symbol: WSM,  name: Williams-Sonoma}
+  - {symbol: LOW,  name: Lowe's}
+  - {symbol: RH,   name: RH (Restoration Hardware)}
+  - {symbol: W,    name: Wayfair}
+  - {symbol: FLXS, name: Flexsteel Industries}
+  - {symbol: SGI,  name: Somnigroup (Tempur-Sealy)}
+  - {symbol: GCT,  name: GigaCloud Technology}
+  - {symbol: FND,  name: "Floor & Decor"}
+  - {symbol: LZB,  name: La-Z-Boy}
+  - {symbol: HVT,  name: Haverty Furniture}
+  - {symbol: ETD,  name: Ethan Allen}
+  - {symbol: MLKN, name: MillerKnoll}
+  - {symbol: BSET, name: Bassett Furniture}
+  - {symbol: LOVE, name: Lovesac}
+  - {symbol: HOFT, name: Hooker Furnishings}
+  - {symbol: LEG,  name: "Leggett & Platt"}
+  - {symbol: ARHS, name: Arhaus}
+  - {symbol: PRPL, name: Purple Innovation}
+  - {symbol: SNBR, name: Sleep Number}
+  - {symbol: TBHC, name: The Brand House Collective}   # formerly Kirkland's (KIRK)

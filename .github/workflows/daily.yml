@@ -1,0 +1,73 @@
+name: Daily Brief
+
+on:
+  schedule:
+    # 09:45 UTC = 5:45am EDT / 4:45am EST. GitHub cron can lag 5-15 min; review lands before 7am.
+    - cron: "45 9 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "Editor notes (e.g. 'Lead with the Fed hike. Drop the Lowe's item.')"
+        required: false
+        default: ""
+      date:
+        description: "Edition date YYYY-MM-DD (default: today ET)"
+        required: false
+        default: ""
+
+concurrency:
+  group: daily-brief
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          sudo apt-get install -y -qq fonts-roboto fonts-liberation >/dev/null || true
+          pip install -q -r requirements.txt
+
+      - name: Build edition and send review email
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          BRIEF_NOTES: ${{ github.event.inputs.notes }}
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.date }}" ]; then ARGS="--date ${{ github.event.inputs.date }}"; fi
+          python -m brief.main $ARGS
+
+      - name: Upload run outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edition-${{ github.run_id }}
+          path: out/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Commit state and Pages assets
+        run: |
+          git config user.name "furniture-brief-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/ docs/
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "edition $(date -u +%Y-%m-%d): state + pulse card"
+          git pull --rebase origin main
+          git push

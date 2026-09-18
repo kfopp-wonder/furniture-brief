@@ -1,0 +1,171 @@
+# RSS sources. `weight` nudges relevance scoring (1.0 = neutral).
+# `sections` hints which sections a source usually feeds (used only for scoring).
+# `paywalled: true` means full-text extraction may fail; the pipeline falls back
+# to the RSS excerpt and flags the story in the review email.
+# Run `python -m brief.main --check-feeds` after editing.
+
+feeds:
+  - id: furniture_today
+    name: Furniture Today
+    url: https://www.furnituretoday.com/feed/
+    weight: 1.4
+    paywalled: true
+    sections: [top_stories, industry_moves, supply_chain]
+
+  - id: home_news_now
+    name: Home News Now
+    url: https://homenewsnow.com/feed/
+    weight: 1.4
+    sections: [top_stories, industry_moves, retail_trends]
+
+  - id: bedtimes
+    name: BedTimes Magazine
+    url: https://bedtimesmagazine.com/feed/
+    weight: 1.1
+    sections: [industry_moves, top_stories]
+
+  - id: retail_dive
+    name: Retail Dive
+    url: https://www.retaildive.com/feeds/news/
+    weight: 1.0
+    sections: [retail_trends, ai_tech]
+
+  - id: modern_retail
+    name: Modern Retail
+    url: https://www.modernretail.co/feed/
+    weight: 0.9
+    sections: [retail_trends, ai_tech]
+
+  - id: retail_gazette
+    name: Retail Gazette
+    url: https://www.retailgazette.co.uk/feed/
+    weight: 0.6
+    sections: [retail_trends]
+
+  - id: supply_chain_dive
+    name: Supply Chain Dive
+    url: https://www.supplychaindive.com/feeds/news/
+    weight: 0.8
+    sections: [supply_chain]
+
+  - id: techcrunch_ai
+    name: TechCrunch
+    url: https://techcrunch.com/category/artificial-intelligence/feed/
+    weight: 0.8
+    sections: [ai_tech]
+
+  - id: gnews_furniture
+    name: Google News
+    url: https://news.google.com/rss/search?q=furniture+retailer+OR+%22furniture+industry%22+OR+%22home+furnishings%22&hl=en-US&gl=US&ceid=US:en
+    weight: 0.7
+    google_news: true
+    sections: [top_stories, industry_moves]
+
+  - id: gnews_mattress
+    name: Google News
+    url: https://news.google.com/rss/search?q=mattress+OR+bedding+industry+OR+%22sleep+products%22&hl=en-US&gl=US&ceid=US:en
+    weight: 0.6
+    google_news: true
+    sections: [industry_moves]
+
+  - id: gnews_ai_retail
+    name: Google News
+    url: https://news.google.com/rss/search?q=%22AI%22+retail+shopping+agent+OR+%22agentic+commerce%22&hl=en-US&gl=US&ceid=US:en
+    weight: 0.6
+    google_news: true
+    sections: [ai_tech]
+
+# Relevance keywords: score = sum(weight of matched terms) * feed weight.
+# Matching is case-insensitive on title + excerpt.
+keywords:
+  strong:   # +3 each
+    - furniture
+    - mattress
+    - bedding
+    - upholster
+    - casegoods
+    - "high point"
+    - "las vegas market"
+    - sofa
+    - recliner
+    - "home furnishings"
+    - "home decor"
+    - lighting
+    - rug
+    - outdoor furniture
+    - sleep number
+    - tempur
+    - purple innovation
+    - la-z-boy
+    - ethan allen
+    - bassett
+    - hooker
+    - flexsteel
+    - lovesac
+    - arhaus
+    - wayfair
+    - "rh "
+    - restoration hardware
+    - williams-sonoma
+    - pottery barn
+    - ashley
+    - rooms to go
+    - havertys
+    - haverty
+    - "bob's discount"
+    - american freight
+    - gigacloud
+    - kirkland
+    - "at home"
+    - ikea
+    - crate & barrel
+    - west elm
+  medium:   # +1.5 each
+    - retail
+    - retailer
+    - tariff
+    - freight
+    - container
+    - "supply chain"
+    - housing
+    - "home sales"
+    - mortgage
+    - consumer
+    - "e-commerce"
+    - ecommerce
+    - marketplace
+    - shopify
+    - amazon
+    - "home depot"
+    - lowe's
+    - target
+    - walmart
+    - costco
+    - bankruptcy
+    - acquisition
+    - earnings
+    - "store openings"
+    - showroom
+  ai:       # +1.5 each, and marks the item as AI-relevant
+    - " ai "
+    - "a.i."
+    - "artificial intelligence"
+    - agentic
+    - "ai agent"
+    - chatgpt
+    - openai
+    - anthropic
+    - claude
+    - gemini
+    - llm
+    - "generative"
+    - automation
+    - "visual search"
+  negative: # -4 each (sports, crypto, etc.)
+    - crypto
+    - bitcoin
+    - nfl
+    - nba
+    - celebrity
+    - horoscope
+    - recipe

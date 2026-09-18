@@ -1,0 +1,93 @@
+
+# The Furniture Brief — pipeline settings
+# Everything here can be edited without touching code.
+
+newsletter:
+  name: "The Furniture Brief"
+  substack_url: "https://kfopp.substack.com"
+  substack_feed: "https://kfopp.substack.com/feed"
+  timezone: "America/New_York"
+  footer: "The Furniture Brief - Curated daily, covering furniture, bedding, home furnishings, and the AI technologies shaping the industry's future."
+
+# Where the Market Pulse PNG will be hosted (GitHub Pages, /docs folder).
+# Set this after enabling Pages: https://<user>.github.io/<repo>
+assets:
+  pages_base_url: "https://REPLACE-ME.github.io/furniture-brief"
+
+# Collection window
+window:
+  hours: 36            # Tue–Fri
+  monday_hours: 84     # Monday catches Fri/Sat/Sun
+  max_candidates: 60   # one-line candidates sent to the selector
+
+# Sections, in render order. `key` is what the model returns; `count` is the target.
+# `min` lets the model return fewer when nothing fits (Supply Chain is often empty).
+sections:
+  - key: top_stories
+    title: "Top Stories"
+    kind: story          # numbered, with headline + ~90-110 word summary
+    count: 5
+    min: 4
+    words: [80, 115]
+  - key: industry_moves
+    title: "Industry Moves"
+    kind: bullets        # bold headline - 40-80 word detail
+    count: 3
+    min: 2
+    words: [40, 85]
+  - key: retail_trends
+    title: "Retail & Consumer Trends"
+    kind: bullets
+    count: 3
+    min: 2
+    words: [40, 85]
+  - key: supply_chain
+    title: "Supply Chain & Trade"
+    kind: bullets
+    count: 2
+    min: 0
+    words: [40, 85]
+  - key: ai_tech
+    title: "AI & Tech Watch"
+    kind: bullets
+    count: 4
+    min: 3
+    words: [40, 85]
+
+# Models. Prices are only used for the cost line in the review email —
+# verify against https://platform.claude.com/docs/en/about-claude/pricing
+models:
+  selector: claude-haiku-4-5-20251001
+  writer: claude-sonnet-5
+  # writer: claude-haiku-4-5-20251001   # cheaper alternative
+  prices_per_mtok:
+    claude-haiku-4-5-20251001: {input: 1.00, output: 5.00}
+    claude-sonnet-5: {input: 2.00, output: 10.00}
+    claude-opus-5: {input: 5.00, output: 25.00}
+  selector_max_tokens: 1200
+  writer_max_tokens: 6000
+
+# Full-text extraction limits (words) — keeps the writer prompt ~15k tokens
+extract:
+  story_words: 900       # top stories
+  bullet_words: 450      # bullet items
+  backup_words: 220      # spare articles sent as excerpts
+  backups: 4
+  timeout_seconds: 20
+
+# Quote sanity checks: flagged in the email, never published silently
+market:
+  min_price: 0.50
+  max_abs_move_pct: 25
+  history_days: 10
+
+# Dates to skip (YYYY-MM-DD). The workflow exits early on these.
+skip_dates:
+  - 2026-11-26   # Thanksgiving
+  - 2026-12-25
+  - 2027-01-01
+
+email:
+  subject_prefix: "Review: The Furniture Brief"
+  smtp_host: smtp.gmail.com
+  smtp_port: 587
