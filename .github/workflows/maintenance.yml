@@ -30,11 +30,18 @@ jobs:
 
       - name: check-feeds
         if: inputs.task == 'check-feeds'
-        run: python -m brief.main --check-feeds
+        run: |
+          set +e
+          python -m brief.main --check-feeds > feeds.txt 2>&1; RC=$?
+          { echo '### Feed check'; echo '```'; cat feeds.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          cat feeds.txt
+          if [ $RC -ne 0 ]; then echo "::warning::one or more feeds returned an error (see summary)"; fi
 
       - name: test-offline
         if: inputs.task == 'test-offline'
-        run: python tests/test_offline.py
+        run: |
+          python tests/test_offline.py 2>&1 | tee tests.txt
+          { echo '### Offline tests'; echo '```'; tail -5 tests.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: mock-run
         if: inputs.task == 'mock-run'
