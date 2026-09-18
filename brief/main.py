@@ -134,6 +134,12 @@ def run(args) -> int:
     content = llm.write(cfg, date_str, weekday, picks, articles, backups, notes, usage,
                         mock=_load_fixture("write_response.json") if args.mock else None)
     (out_dir / "content_raw.json").write_text(json.dumps(content, indent=1, ensure_ascii=False))
+    log.info("writer output shape: %s", llm.describe_shape(content))
+    if not args.mock and llm.count_items(content) == 0:
+        log.warning("writer returned no section items; retrying once")
+        content = llm.write(cfg, date_str, weekday, picks, articles, backups, notes, usage)
+        (out_dir / "content_raw2.json").write_text(json.dumps(content, indent=1, ensure_ascii=False))
+        log.info("writer output shape (retry): %s", llm.describe_shape(content))
 
     # 6. validate + attach sources (Python)
     content, warnings = render.validate_and_attach(cfg, content, articles)

@@ -67,6 +67,26 @@ def _unstringify(obj):
     return obj
 
 
+def describe_shape(obj, depth: int = 0) -> str:
+    """Compact type map for logs, e.g. {title:str, sections:{top_stories:list[5], ...}}."""
+    if isinstance(obj, dict):
+        if depth > 2:
+            return "{...}"
+        return "{" + ", ".join(f"{k}:{describe_shape(v, depth + 1)}" for k, v in list(obj.items())[:12]) + "}"
+    if isinstance(obj, list):
+        return f"list[{len(obj)}]" + (f" of {describe_shape(obj[0], depth + 1)}" if obj and depth < 2 else "")
+    if isinstance(obj, str):
+        return f"str({len(obj)}:{obj[:40]!r})" if len(obj) > 60 and (obj.lstrip().startswith(("{", "["))) else "str"
+    return type(obj).__name__
+
+
+def count_items(content: dict) -> int:
+    secs = content.get("sections") if isinstance(content, dict) else None
+    if not isinstance(secs, dict):
+        return 0
+    return sum(len(v) for v in secs.values() if isinstance(v, list))
+
+
 def _repair_json(text: str) -> str:
     """Fix the usual model slips: trailing commas, smart quotes around keys, stray fences."""
     text = re.sub(r",\s*([}\]])", r"\1", text)
