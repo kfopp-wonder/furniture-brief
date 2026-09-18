@@ -7,8 +7,14 @@
     <p style="margin:0 0 4px 0; font-size:12px; color:#888; text-transform:uppercase; letter-spacing:1px;">Review draft · {{ date_long }}</p>
     <h1 style="margin:0 0 6px 0; font-size:22px;">{{ content.title }}</h1>
     <p style="margin:0 0 14px 0; font-size:15px; color:#444;">{{ content.subtitle }}</p>
+{% if draft_url %}
+    <p style="margin:0 0 14px 0;">
+      <a href="{{ draft_url }}" style="display:inline-block; background:#FF6719; color:#fff; text-decoration:none; font-weight:600; padding:10px 18px; border-radius:6px; font-size:14px;">Open draft in Substack</a>
+      <span style="font-size:12px; color:#666; margin-left:8px;">Title, subtitle, body and card are already in the draft. Review, then Publish.</span>
+    </p>
+{% endif %}
     <p style="margin:0; font-size:12px; color:#666;">
-      Attached: <code>paste.html</code> (select all, copy, paste into the Substack body), <code>title_subtitle.txt</code>, and the Market Pulse card.
+      {% if not draft_url %}Attached: <code>paste.html</code> (select all, copy, paste into the Substack body), <code>title_subtitle.txt</code>, and the Market Pulse card.{% else %}Fallback attachments: <code>paste.html</code>, <code>title_subtitle.txt</code>, and the card.{% endif %}
       {% if card_url %}Card URL (live on GitHub Pages a few minutes after the run): <a href="{{ card_url }}">{{ card_url }}</a>{% endif %}
       {% if run_url %}· <a href="{{ run_url }}">workflow run</a>{% endif %}
     </p>

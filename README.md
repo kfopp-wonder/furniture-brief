@@ -32,6 +32,7 @@ It is also more reliable than the current card: every quote is checked (a price 
    - `FRED_API_KEY`: free at fred.stlouisfed.org (10-yr, gas, diesel, 30-yr mortgage).
    - `SMTP_USER`, `SMTP_PASS`: a Gmail address and a Gmail [app password](https://myaccount.google.com/apppasswords).
    - `MAIL_FROM`, `MAIL_TO`: sender and your inbox.
+   - `SUBSTACK_SID` (optional, recommended): your Substack session cookie, so each run creates the edition as a **draft in Substack** with title, subtitle, body, images and card already in place. In Chrome, logged in to Substack: View → Developer → Developer Tools → Application → Cookies → `https://substack.com` → copy the **Value** of `substack.sid`. Sessions last months; when it expires the review email says so and falls back to the paste workflow.
 4. **Seed the dedupe history** from all past editions (zero tokens): Actions → Maintenance → Run workflow → `backfill-history`. It reads the public Substack archive and commits `state/history.jsonl`. (Locally: `python scripts/backfill_history.py`.) The repo ships pre-seeded with the Sept 11–17 editions.
 5. **Verify feeds**: Actions → Maintenance → `check-feeds` prints how many items each feed returned. Fix or remove any that show errors in `config/feeds.yaml`. (Locally: `python -m brief.main --check-feeds`.)
 6. **Dry run**: Actions → Daily Brief → Run workflow. You'll get the review email in about 2 minutes.
@@ -41,7 +42,7 @@ It is also more reliable than the current card: every quote is checked (a price 
 
 At ~5:45am ET (09:45 UTC; GitHub's scheduler can lag 5–15 minutes) the workflow runs and emails **"Review: The Furniture Brief · Thu Sep 17 · {title}"** containing the title and subtitle, a yellow **Check before publishing** box (feed errors, paywalled stories written from excerpts, odd quotes, Google News links to replace), the run cost, the full rendered edition, and attachments: `paste.html`, `title_subtitle.txt`, and the card PNG.
 
-To publish: open Substack → New post → paste title and subtitle → copy the edition from the email (or open `paste.html` in a browser, select all, copy) → paste into the body → publish.
+To publish: click **Open draft in Substack** in the email, read it through, and hit Publish. (Without `SUBSTACK_SID`: open Substack → New post → paste title and subtitle → copy the edition from the email or `paste.html` → paste into the body → publish.)
 
 **Regenerate with direction:** Actions → Daily Brief → Run workflow, enter notes such as *"Lead with the Fed hike. Drop the Lowe's item."* Both model calls receive the notes. Cost per rerun: the same ~$0.10.
 
@@ -58,7 +59,7 @@ To publish: open Substack → New post → paste title and subtitle → copy the
 
 ## Known limits
 
-- **Substack has no publishing API**, so the final paste stays manual (as it is today). This is also your human review gate, which is worth keeping.
+- **Substack has no official publishing API.** Drafts are created through the same internal endpoints the Substack editor uses (`/api/v1/drafts`, `/api/v1/image`), authenticated with your session cookie. The pipeline never publishes; you still press the button. If Substack changes those endpoints, the run keeps working and the email falls back to the paste workflow.
 - **Drewry WCI** has no API; the scraper is best-effort. If it breaks, the email says so; copy `state/wci_manual.example.yaml` to `state/wci_manual.yaml` and update the three numbers on Thursdays.
 - **Paywalled sources** (some Furniture Today pieces) fall back to the RSS excerpt and are flagged for fact-checking.
 - **Google News items** link through news.google.com; they are flagged so you can swap in the publisher URL.
@@ -83,7 +84,7 @@ Every run writes `out/{date}/`: `candidates.json` (what was collected), `picks.j
 ## Layout
 
 ```
-brief/        collect · dedupe · extract · llm (the 2 calls) · market · card · render · notify · main
+brief/        collect · dedupe · extract · llm (the 2 calls) · market · card · render · substack · notify · main
 config/       settings, feeds, tickers, style_guide.md
 templates/    newsletter.html.j2 (your current Substack markup), review_email.html.j2
 scripts/      backfill_history.py

@@ -167,3 +167,36 @@ class TestMarket(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=1)
+
+
+class TestSubstack(unittest.TestCase):
+    def test_build_doc_structure(self):
+        from brief import substack
+        cfg = Settings.load()
+        cands = {c["id"]: c for c in fx("candidates.json")}
+        ex = fx("extracted.json")
+        articles = {i: {**cands[i], **ex[i]} for i in ex if i in cands}
+        content, _ = render.validate_and_attach(cfg, fx("write_response.json"), articles)
+        doc = substack.build_doc(cfg, date(2026, 9, 17), content, "https://x/pulse.png")
+        types = [n["type"] for n in doc["content"]]
+        self.assertEqual(doc["type"], "doc")
+        self.assertIn("heading", types)
+        self.assertIn("bullet_list", types)
+        self.assertIn("captionedImage", types)
+        self.assertIn("blockquote", types)
+        heads = [n["content"][0]["text"] for n in doc["content"] if n["type"] == "heading" and n["attrs"]["level"] == 2]
+        self.assertEqual(heads[:3], ["Top Stories", "Industry Moves", "Market Pulse"])
+        self.assertNotIn("Supply Chain & Trade", heads)          # empty section omitted
+        stories = [n for n in doc["content"] if n["type"] == "heading" and n["attrs"]["level"] == 3]
+        self.assertTrue(stories[0]["content"][0]["text"].startswith("1. "))
+        links = json.dumps(doc).count('"type": "link"')
+        self.assertGreaterEqual(links, 15)                        # one source link per item
+        # serialisable and dash-free
+        self.assertNotIn("—", json.dumps(doc, ensure_ascii=False))
+
+    def test_cookie_parsing(self):
+        from brief import substack
+        self.assertEqual(substack.Substack._parse_cookie("abc123"), {"substack.sid": "abc123"})
+        self.assertEqual(substack.Substack._parse_cookie("a=1; substack.sid=xyz; b=2")["substack.sid"], "xyz")
+        with self.assertRaises(substack.SubstackError):
+            substack.Substack._parse_cookie("a=1; b=2")

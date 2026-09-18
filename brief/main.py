@@ -17,7 +17,7 @@ import sys
 from datetime import datetime, timezone
 
 from . import card as card_mod
-from . import collect, dedupe, extract, llm, market, notify, render
+from . import collect, dedupe, extract, llm, market, notify, render, substack
 from .util import DOCS, FIXTURES, OUT, STATE, Settings, edition_date, env, log, setup_logging, short_date, window_hours
 
 
@@ -140,12 +140,18 @@ def run(args) -> int:
     (DOCS / "drafts" / f"{date_str}.html").write_text(
         f"<!DOCTYPE html><html><head><meta charset='utf-8'><title>{content['title']}</title></head><body>{newsletter_html}</body></html>",
         encoding="utf-8")
+    # 8b. Substack draft (skipped in mock mode; never fatal)
+    draft_url = None
+    if not args.mock:
+        draft_url, warn = substack.publish_draft(cfg, d, content, card_path, card_url)
+        if warn:
+            checks.append(warn)
     run_url = None
     if env("GITHUB_SERVER_URL") and env("GITHUB_REPOSITORY") and env("GITHUB_RUN_ID"):
         run_url = f"{env('GITHUB_SERVER_URL')}/{env('GITHUB_REPOSITORY')}/actions/runs/{env('GITHUB_RUN_ID')}"
     usage_d = {"total": usage.total, "calls": usage.calls}
     review_html = render.render_review_email(cfg, d, content, newsletter_html, checks, feed_reports,
-                                             usage_d, card_url, run_url, notes)
+                                             usage_d, card_url, run_url, notes, draft_url)
     (out_dir / "review_email.html").write_text(review_html, encoding="utf-8")
     # In the emailed copy, show the freshly rendered card inline (cid) instead of the Pages URL,
     # which only goes live a few minutes after the run and can be cached by mail clients.

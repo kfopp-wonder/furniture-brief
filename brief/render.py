@@ -114,12 +114,12 @@ def render_newsletter(cfg: Settings, d: date, content: dict, card_url: str | Non
 
 def render_review_email(cfg: Settings, d: date, content: dict, newsletter_html: str, checks: list[str],
                         feed_reports: list[dict], usage: dict, card_url: str | None, run_url: str | None,
-                        notes: str) -> str:
+                        notes: str, draft_url: str | None = None) -> str:
     tpl = _env().get_template("review_email.html.j2")
     feed_errors = [f'{r["name"]}: {r["error"]}' for r in feed_reports if r.get("error")]
     return tpl.render(date_long=long_date(d), content=content, newsletter_html=newsletter_html,
                       checks=checks, feed_errors=feed_errors, usage=usage, card_url=card_url,
-                      run_url=run_url, notes=notes)
+                      run_url=run_url, notes=notes, draft_url=draft_url)
 
 
 def title_subtitle_txt(content: dict) -> str:
