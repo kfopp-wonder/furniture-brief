@@ -25,6 +25,12 @@ def _parse_date(entry) -> datetime | None:
         if not val:
             continue
         try:
+            if re.match(r"\d{4}-\d{2}-\d{2}T", val):
+                dt = datetime.fromisoformat(val.replace("Z", "+00:00"))
+                return dt.astimezone(timezone.utc)
+        except ValueError:
+            pass
+        try:
             dt = parsedate_to_datetime(val)
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
@@ -64,8 +70,43 @@ def _gnews_publisher(entry) -> str | None:
     return None
 
 
+def _slug_title(url: str) -> str:
+    slug = url.rstrip("/").rsplit("/", 1)[-1]
+    return re.sub(r"[-_]+", " ", slug).strip().capitalize()
+
+
+def fetch_sitemap(feed: dict, timeout: int = 25) -> tuple[list, str | None]:
+    """WordPress sites with RSS disabled (Furniture Today) still publish a Yoast post
+    sitemap. Read the newest post-sitemap file(s) and turn <url> entries into
+    feedparser-like entries. Titles come from the slug; extraction fills in the rest."""
+    try:
+        r = requests.get(feed["url"], headers={"User-Agent": UA}, timeout=timeout)
+        if r.status_code >= 400:
+            return [], f"HTTP {r.status_code}"
+        parts = re.findall(r"<loc>([^<]*post-sitemap(\d*)\.xml)</loc>", r.text)
+        if parts:
+            parts.sort(key=lambda m: int(m[1] or 1), reverse=True)
+            files = [m[0] for m in parts[:2]]
+        else:
+            files = [feed["url"]]
+        entries = []
+        for f in files:
+            rr = requests.get(f, headers={"User-Agent": UA}, timeout=timeout)
+            if rr.status_code >= 400:
+                continue
+            for loc, lastmod in re.findall(r"<url>\s*<loc>([^<]+)</loc>\s*(?:<lastmod>([^<]+)</lastmod>)?", rr.text):
+                if not lastmod:
+                    continue
+                entries.append({"title": _slug_title(loc), "link": loc, "published": lastmod, "summary": ""})
+        return entries, None
+    except requests.RequestException as e:
+        return [], f"{type(e).__name__}: {e}"
+
+
 def fetch_feed(feed: dict, timeout: int = 25) -> tuple[list, str | None]:
     """Return (entries, error)."""
+    if feed.get("sitemap"):
+        return fetch_sitemap(feed, timeout)
     try:
         r = requests.get(feed["url"], headers={"User-Agent": UA}, timeout=timeout)
         if r.status_code >= 400:
@@ -140,6 +181,9 @@ def collect(cfg: Settings, now: datetime, hours: int) -> tuple[list[dict], list[
                     continue
                 excerpt = _excerpt(e)
                 score, is_ai = score_item(title, excerpt, feed, kw)
+                if feed.get("sitemap"):
+                    score = max(score, 3.0 * float(feed.get("weight", 1.0)))  # trade source, no excerpt to score
+                    is_ai = is_ai or bool(re.search(r"\bai\b|artificial intelligence", title, re.I))
                 if score <= 0:
                     continue
                 publisher = feed["name"]
@@ -162,6 +206,7 @@ def collect(cfg: Settings, now: datetime, hours: int) -> tuple[list[dict], list[
                     "score": score,
                     "is_ai": is_ai,
                     "sections_hint": feed.get("sections", []),
+                    "slug_title": bool(feed.get("sitemap")),
                 })
                 kept += 1
             reports.append({"id": feed["id"], "name": feed["name"], "fetched": len(entries),

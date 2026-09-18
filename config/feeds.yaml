@@ -7,7 +7,9 @@
 feeds:
   - id: furniture_today
     name: Furniture Today
-    url: https://www.furnituretoday.com/feed/
+    # Furniture Today's RSS is switched off; its Yoast post sitemap carries fresh timestamps.
+    url: https://www.furnituretoday.com/sitemap_index.xml
+    sitemap: true
     weight: 1.4
     paywalled: true
     sections: [top_stories, industry_moves, supply_chain]
@@ -35,12 +37,6 @@ feeds:
     url: https://www.modernretail.co/feed/
     weight: 0.9
     sections: [retail_trends, ai_tech]
-
-  - id: retail_gazette
-    name: Retail Gazette
-    url: https://www.retailgazette.co.uk/feed/
-    weight: 0.6
-    sections: [retail_trends]
 
   - id: supply_chain_dive
     name: Supply Chain Dive

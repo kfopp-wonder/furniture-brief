@@ -64,6 +64,11 @@ def extract_one(article: dict, max_words: int, timeout: int) -> dict:
         if r.status_code < 400 and r.text:
             html = r.text
             image = _lead_image(html)
+            if article.get("feed_id") and article.get("slug_title"):
+                m = re.search(r'<meta[^>]+property="og:title"[^>]+content="([^"]+)"', html, re.I) or re.search(r"<title>([^<]+)</title>", html, re.I)
+                if m:
+                    from html import unescape
+                    article["title"] = re.sub(r"\s*[|-]\s*Furniture Today\s*$", "", unescape(m.group(1))).strip()
             text = trafilatura.extract(html, include_comments=False, include_tables=False,
                                        favor_precision=True, config=cfg) or ""
         else:
