@@ -48,6 +48,28 @@ def _json_from(text: str) -> dict:
     return json.loads(text[start:end + 1])
 
 
+def _loads_lenient(t: str):
+    """json.loads, then light repair, then json_repair (handles unescaped quotes, trailing commas,
+    truncated tails). Raises ValueError if nothing works."""
+    try:
+        return json.loads(t)
+    except json.JSONDecodeError:
+        pass
+    try:
+        return json.loads(_repair_json(t))
+    except json.JSONDecodeError:
+        pass
+    try:
+        from json_repair import repair_json
+        fixed = repair_json(t, return_objects=True)
+        if isinstance(fixed, (dict, list)) and fixed:
+            log.warning("model JSON needed json_repair")
+            return fixed
+    except Exception as e:  # noqa: BLE001
+        log.warning("json_repair failed: %s", e)
+    raise ValueError("unparseable JSON")
+
+
 def _unstringify(obj):
     """Tool inputs sometimes arrive with a nested object encoded as a JSON string. Decode those."""
     if isinstance(obj, dict):
@@ -56,14 +78,11 @@ def _unstringify(obj):
         return [_unstringify(v) for v in obj]
     if isinstance(obj, str):
         t = obj.strip()
-        if (t.startswith("{") and t.endswith("}")) or (t.startswith("[") and t.endswith("]")):
+        if (t.startswith("{") and t.endswith("}")) or (t.startswith("[") and t.endswith("]")) or t.startswith("{\n"):
             try:
-                return _unstringify(json.loads(t))
-            except json.JSONDecodeError:
-                try:
-                    return _unstringify(json.loads(_repair_json(t)))
-                except json.JSONDecodeError:
-                    return obj
+                return _unstringify(_loads_lenient(t))
+            except ValueError:
+                return obj
     return obj
 
 
@@ -127,9 +146,9 @@ def call_model(cfg: Settings, model: str, system: str, user: str, max_tokens: in
     text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
     try:
         return _unstringify(_json_from(text))
-    except json.JSONDecodeError as e:
-        log.warning("model JSON needed repair: %s", e)
-        return _unstringify(_json_from(_repair_json(text)))
+    except json.JSONDecodeError:
+        start, end = text.find("{"), text.rfind("}")
+        return _unstringify(_loads_lenient(text[start:end + 1]))
 
 
 # ---------------------------------------------------------------- schemas
@@ -150,7 +169,8 @@ def write_schema(cfg: Settings) -> dict:
             "properties": {
                 "title": {"type": "string"}, "subtitle": {"type": "string"}, "greeting": {"type": "string"},
                 "hero": {"type": "string"},
-                "sections": {"type": "object", "properties": sections, "required": list(sections)},
+                "sections": {"type": "object", "properties": sections, "required": list(sections),
+                             "description": "A JSON object (NOT a string containing JSON) mapping each section key to its array of items."},
                 "one_thing": {"type": "object", "properties": {"headline": {"type": "string"}, "body": {"type": "string"}},
                               "required": ["headline", "body"]},
                 "closing": {"type": "string"}},

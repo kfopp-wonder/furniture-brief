@@ -267,5 +267,14 @@ class TestSelectTolerance(unittest.TestCase):
         self.assertIsInstance(picks["hero"], str)
 
 
+class TestLenientJson(unittest.TestCase):
+    def test_unescaped_quote_inside_string(self):
+        from brief import llm
+        bad = '{"top_stories": [{"headline": "Rooms To Go says "yes" to Texas", "summary": "x", "article_id": "a"}],}'
+        out = llm._unstringify(bad)
+        self.assertIsInstance(out, dict)
+        self.assertEqual(out["top_stories"][0]["article_id"], "a")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
