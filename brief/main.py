@@ -233,6 +233,24 @@ def main(argv=None) -> int:
         return run(args)
     except Exception:
         log.exception("pipeline failed")
+        # Never fail silently: send a short failure email so a broken morning is visible in the inbox.
+        if not (args.mock or args.no_email or args.force or args.check_feeds or args.check_substack or args.list_newsletters):
+            try:
+                import html as _html
+                import traceback
+                cfg = Settings.load()
+                d = edition_date(cfg, args.date)
+                tb = _html.escape(traceback.format_exc()[-4000:])
+                repo = env("GITHUB_REPOSITORY") or ""
+                run_id = env("GITHUB_RUN_ID") or ""
+                run_link = f"https://github.com/{repo}/actions/runs/{run_id}" if repo and run_id else ""
+                body = (f"<p>The Furniture Brief for <b>{d.isoformat()}</b> failed before the review draft was ready.</p>"
+                        f"<p>Re-run it from Actions &rarr; Daily Brief &rarr; Run workflow once the cause below is fixed"
+                        + (f" (<a href='{run_link}'>this run</a>)" if run_link else "") + ".</p>"
+                        f"<pre style='font-size:12px;white-space:pre-wrap'>{tb}</pre>")
+                notify.send_review(cfg, f"FAILED: The Furniture Brief · {short_date(d)}", body, [])
+            except Exception:  # noqa: BLE001
+                log.exception("failure email could not be sent")
         return 2
 
 

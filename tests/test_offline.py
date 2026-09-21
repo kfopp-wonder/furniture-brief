@@ -276,5 +276,21 @@ class TestLenientJson(unittest.TestCase):
         self.assertEqual(out["top_stories"][0]["article_id"], "a")
 
 
+class TestShapeDrift(unittest.TestCase):
+    def test_one_thing_as_string_with_top_level_body(self):
+        cfg = Settings.load()
+        cands = {c["id"]: c for c in fx("candidates.json")}
+        ex = fx("extracted.json")
+        articles = {i: {**cands[i], **ex[i]} for i in ex if i in cands}
+        content = fx("write_response.json")
+        content["one_thing"] = "Lead With Availability"
+        content["body"] = "Put in-stock first."
+        content["sections"]["ai_tech"].append("garbage")
+        content, warnings = render.validate_and_attach(cfg, content, articles)
+        self.assertEqual(content["one_thing"], {"headline": "Lead With Availability", "body": "Put in-stock first."})
+        self.assertEqual(len(content["sections"]["ai_tech"]), 4)
+        self.assertTrue(any("malformed" in w for w in warnings))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

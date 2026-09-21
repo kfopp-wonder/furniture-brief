@@ -28,11 +28,21 @@ def validate_and_attach(cfg: Settings, content: dict, articles: dict[str, dict])
     """Normalise the writer output in place. Returns (content, warnings)."""
     warnings: list[str] = []
     for k in ("title", "subtitle", "greeting", "closing"):
-        content[k] = _clean(content.get(k, ""))
+        v = content.get(k, "")
+        content[k] = _clean(v if isinstance(v, str) else str(v or ""))
         if not content[k]:
             warnings.append(f"Missing {k}.")
     ot = content.get("one_thing") or {}
-    content["one_thing"] = {"headline": _clean(ot.get("headline", "")), "body": _clean(ot.get("body", ""))}
+    if isinstance(ot, str):
+        # model flattened it: "one_thing": "<headline>" with "body" (or "one_thing_body") at top level
+        ot = {"headline": ot, "body": content.get("body") or content.get("one_thing_body") or ""}
+    elif isinstance(ot, list):
+        ot = ot[0] if ot and isinstance(ot[0], dict) else {}
+    elif not isinstance(ot, dict):
+        ot = {}
+    content["one_thing"] = {"headline": _clean(str(ot.get("headline", ""))), "body": _clean(str(ot.get("body", "")))}
+    if not content["one_thing"]["headline"]:
+        warnings.append("The One Thing is missing; add one before publishing.")
 
     sections = content.get("sections") or {}
     if isinstance(sections, str):
@@ -47,8 +57,14 @@ def validate_and_attach(cfg: Settings, content: dict, articles: dict[str, dict])
     for s in cfg.sections:
         items = []
         lo, hi = s["words"]
-        for raw in sections.get(s["key"], []) or []:
-            aid = raw.get("article_id")
+        raw_items = sections.get(s["key"], []) or []
+        if isinstance(raw_items, dict):
+            raw_items = [raw_items]
+        for raw in raw_items:
+            if not isinstance(raw, dict):
+                warnings.append(f'{s["title"]}: an item came back malformed and was dropped.')
+                continue
+            aid = raw.get("article_id") or raw.get("id")
             art = articles.get(aid)
             if not art:
                 warnings.append(f'{s["title"]}: item "{raw.get("headline", "")[:50]}" references unknown article {aid}; dropped.')
