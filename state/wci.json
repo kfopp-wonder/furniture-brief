@@ -1,10 +1,10 @@
 {
-  "composite": 4500.0,
-  "composite_pct": 1.0,
-  "shanghai_la": 7712.0,
-  "shanghai_la_pct": 5.0,
-  "shanghai_ny": 10394.0,
-  "shanghai_ny_pct": 7.0,
-  "as_of": "2026-09-17",
+  "composite": 4468.0,
+  "composite_pct": -1.0,
+  "shanghai_la": 7838.0,
+  "shanghai_la_pct": 2.0,
+  "shanghai_ny": 10373.0,
+  "shanghai_ny_pct": 0.0,
+  "as_of": "2026-09-24",
   "source": "scrape"
 }
